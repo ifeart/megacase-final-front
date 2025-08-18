@@ -1,0 +1,6 @@
+export {default as AnnotateRoute} from './AnnotateRoute'
+export {default as BookingRoute} from './BookingRoute'
+export {default as EditorRoute} from './EditorRoute'
+export {default as MapPlacementRoute} from './MapPlacementRoute'
+export {default as ReviewRoute} from './ReviewRoute'
+export {default as SetupRoute} from './SetupRoute'

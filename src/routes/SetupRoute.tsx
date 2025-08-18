@@ -1,6 +1,8 @@
 import { useNavigate } from "react-router-dom";
 import { SpaceSetup } from "../features/admin/SpaceSetup";
-import InternalPage from "./InternalPage";
+
+import InternalPage from '@/pages/InternalPage';
+
 
 export default function SetupRoute() {
   const navigate = useNavigate();
