@@ -180,43 +180,43 @@ export const MapPlacement: React.FC<Props> = ({ spaceId, onNext }) => {
       {/* Информационная панель */}
       <div className="absolute top-8 left-8 z-40 glass-panel rounded-[20px] p-6 max-w-sm hover-lift">
         <h3 className="text-[28px] text-black mb-2 tracking-tight">
-          Razmestit ofis
+          Разместить офис
         </h3>
         <p className="text-[16px] text-gray-500 mb-6">
-          Vyberite mesto na karte dlya vashego ofisa
+          Выберите место на карте для вашего офиса
         </p>
 
         <div className="space-y-6">
           <div>
             <label className="block text-[14px] font-medium text-black mb-2">
-              Nazvanie ofisa
+              Название офиса
             </label>
             <input
               type="text"
               className="w-full px-0 py-3 text-[16px] text-black bg-transparent border-0 border-b border-gray-200 focus:border-[#1daff7] focus:outline-none transition-colors duration-300 placeholder-gray-400"
               value={officeName}
               onChange={(e) => setOfficeName(e.target.value)}
-              placeholder="Vvedite nazvanie"
+              placeholder="Введите название"
             />
           </div>
 
           <div>
             <label className="block text-[14px] font-medium text-black mb-2">
-              Gorod
+              Город
             </label>
             <input
               type="text"
               className="w-full px-0 py-3 text-[16px] text-black bg-transparent border-0 border-b border-gray-200 focus:border-[#1daff7] focus:outline-none transition-colors duration-300 placeholder-gray-400"
               value={cityName}
               onChange={(e) => setCityName(e.target.value)}
-              placeholder="Vvedite gorod"
+              placeholder="Введите город"
             />
           </div>
 
           {selectedCoords && (
             <div className="text-[12px] text-gray-500 space-y-1">
-              <div>Shirota: {selectedCoords.lat.toFixed(4)}</div>
-              <div>Dolgota: {selectedCoords.lng.toFixed(4)}</div>
+              <div>Широта: {selectedCoords.lat.toFixed(4)}</div>
+              <div>Долгота: {selectedCoords.lng.toFixed(4)}</div>
             </div>
           )}
         </div>
@@ -228,14 +228,14 @@ export const MapPlacement: React.FC<Props> = ({ spaceId, onNext }) => {
           className="px-6 py-4 text-[16px] border border-gray-300 text-gray-700 hover:border-gray-400 transition-all duration-300 hover-lift"
           onClick={handleCreateNewOffice}
         >
-          Sozdat noviy ofis
+          Создать новый офис
         </button>
         <button
           className="px-6 py-4 text-[16px] primary-button disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
           onClick={handlePlaceOffice}
           disabled={!selectedCoords || !officeName.trim() || !cityName.trim()}
         >
-          Razmestit ofis
+          Разместить офис
         </button>
       </div>
 
@@ -243,9 +243,9 @@ export const MapPlacement: React.FC<Props> = ({ spaceId, onNext }) => {
       <div className="absolute bottom-8 left-8 z-40 glass-panel rounded-[15px] p-4 text-[14px] max-w-xs">
         <div className="font-medium mb-2 text-black">Instruktsii:</div>
         <ul className="text-gray-600 space-y-1">
-          <li>• Kliknite na karte dlya vybora mesta</li>
-          <li>• Zapolnite nazvanie i gorod</li>
-          <li>• Nazhmite "Razmestit ofis"</li>
+          <li>• Кликните на карте для выбора места</li>
+          <li>• Заполните название и город</li>
+          <li>• Нажмите "Разместить офис"</li>
         </ul>
       </div>
     </div>

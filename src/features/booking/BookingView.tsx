@@ -315,7 +315,7 @@ export const BookingView: React.FC<Props> = ({ spaceId }) => {
         {selectedCity && cityOffices && (
           <div className="absolute top-8 left-8 z-40 glass-panel rounded-[20px] p-6 max-w-sm hover-lift">
             <h3 className="text-[24px] text-black mb-4 tracking-tight">
-              Vyberite ofis v gorode {selectedCity}
+              Выберите офис в городе {selectedCity}
             </h3>
             <div className="space-y-3">
               {cityOffices.map((office) => (
@@ -338,7 +338,7 @@ export const BookingView: React.FC<Props> = ({ spaceId }) => {
                 setCityOffices(null);
               }}
             >
-              Otmenit
+              Отменить
             </button>
           </div>
         )}
@@ -349,7 +349,7 @@ export const BookingView: React.FC<Props> = ({ spaceId }) => {
             className="px-6 py-4 text-[16px] primary-button hover-lift"
             onClick={handleCreateNewOffice}
           >
-            Sozdat noviy ofis
+            Создать новый офис
           </button>
         </div>
 
@@ -357,11 +357,11 @@ export const BookingView: React.FC<Props> = ({ spaceId }) => {
         {!selectedCity && officesOnMap.length === 0 && (
           <div className="absolute top-8 left-8 z-40 glass-panel rounded-[20px] p-6 max-w-sm">
             <h3 className="text-[24px] text-black mb-3 tracking-tight">
-              Dobro pozhalovat!
+              Добро пожаловать!
             </h3>
             <p className="text-[16px] text-gray-600">
-              U vas poka net ofisov na karte. Nazmite "Sozdat noviy ofis"
-              chtobyi nachat.
+              У вас пока нет офисов на карте. Нажмите "Создать новый офис"
+              чтобы начать.
             </p>
           </div>
         )}
@@ -369,11 +369,10 @@ export const BookingView: React.FC<Props> = ({ spaceId }) => {
         {!selectedCity && officesOnMap.length > 0 && (
           <div className="absolute top-8 left-8 z-40 glass-panel rounded-[20px] p-6 max-w-sm">
             <h3 className="text-[24px] text-black mb-3 tracking-tight">
-              Vashi ofisyi
+              Ваши офисы
             </h3>
             <p className="text-[16px] text-gray-600">
-              Vyberite ofis na karte dlya upravleniya bronirovaniem ili sozdayte
-              noviy.
+              Выберите офис на карте для управления бронированием или создайте новый.
             </p>
           </div>
         )}
@@ -402,13 +401,13 @@ export const BookingView: React.FC<Props> = ({ spaceId }) => {
           <div className="glass-panel rounded-[10px] px-4 py-3 text-[14px] hover-lift">
             <div className="font-medium text-black mb-1">{hover.name}</div>
             <div className="text-[12px] text-gray-500 mb-3">
-              {hover.available ? "svobodno" : "zanyato"}
+              {hover.available ? "свободно" : "занято"}
             </div>
             <button
               className="px-4 py-2 text-[14px] primary-button"
               onClick={onBookToggle}
             >
-              {hover.available ? "Zabronirovat" : "Osvobodit"}
+              {hover.available ? "Забронировать" : "Освободить"}
             </button>
           </div>
         </div>
@@ -420,7 +419,7 @@ export const BookingView: React.FC<Props> = ({ spaceId }) => {
           className="px-4 py-3 text-[16px] glass-panel rounded-[10px] hover-lift text-black"
           onClick={handleBackToMap}
         >
-          ← Vernutsya k karte
+          ← Вернуться к карте
         </button>
       </div>
 

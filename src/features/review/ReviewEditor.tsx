@@ -165,16 +165,16 @@ export const ReviewEditor: React.FC<Props> = ({ spaceId, onNext }) => {
       {/* Нижняя панель действий */}
       <div className="fixed bottom-0 left-0 right-0 z-50 glass-panel border-t-0">
         <div className="mx-auto max-w-6xl px-8 py-2 flex items-center gap-6">
-          <div className="text-gray-500 text-[16px]">Proverka i nastroyka</div>
+          <div className="text-gray-500 text-[16px]">Проверка и настройка</div>
           <div className="flex-1" />
           <div className="text-[14px] text-gray-500">
-            Vyberite elementy dlya itogov
+            Выберите элементы для итогов
           </div>
           <button
             className="px-6 py-3 text-[16px] primary-button hover-lift"
             onClick={onNext}
           >
-            Dalee
+            Далее
           </button>
         </div>
       </div>
@@ -191,7 +191,7 @@ export const ReviewEditor: React.FC<Props> = ({ spaceId, onNext }) => {
               }`}
               onClick={() => setTab("rooms")}
             >
-              Komnaty
+              Комнаты
             </button>
             <button
               className={`px-4 py-2 text-[14px] rounded-[8px] border transition-all duration-300 ${
@@ -201,7 +201,7 @@ export const ReviewEditor: React.FC<Props> = ({ spaceId, onNext }) => {
               }`}
               onClick={() => setTab("desks")}
             >
-              Stoly
+              Столы
             </button>
             <button
               className={`px-4 py-2 text-[14px] rounded-[8px] border transition-all duration-300 ${
@@ -211,20 +211,20 @@ export const ReviewEditor: React.FC<Props> = ({ spaceId, onNext }) => {
               }`}
               onClick={() => setTab("markers")}
             >
-              Markery
+              Маркеры
             </button>
             <div className="flex-1" />
             <button
               className="px-3 py-2 text-[12px] border border-gray-300 text-gray-700 hover:border-gray-400 transition-all duration-300 hover-lift mr-2"
               onClick={() => bulk(tab, true)}
             >
-              Vse
+              Все
             </button>
             <button
               className="px-3 py-2 text-[12px] border border-gray-300 text-gray-700 hover:border-gray-400 transition-all duration-300 hover-lift"
               onClick={() => bulk(tab, false)}
             >
-              Nichego
+              Ничего
             </button>
           </div>
 
@@ -247,10 +247,10 @@ export const ReviewEditor: React.FC<Props> = ({ spaceId, onNext }) => {
                     </div>
                     <div className="text-[12px] text-gray-500 truncate">
                       {tab === "rooms"
-                        ? `Uroven ${(item.levelIndex ?? 0) + 1}`
+                        ? `Уровень ${(item.levelIndex ?? 0) + 1}`
                         : tab === "desks"
-                        ? `Stol ${item.furnitureId}`
-                        : `Marker ${item.id}`}
+                        ? `Стол ${item.furnitureId}`
+                        : `Маркер ${item.id}`}
                     </div>
                   </div>
                 </label>
