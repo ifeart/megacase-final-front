@@ -1,0 +1,110 @@
+@import "tailwindcss";
+
+@font-face {
+  font-family: "PPRader";
+  src: url("/src/assets/PPRader-Regular.woff2") format("woff2");
+  src: url("/src/assets/NK57MonospaceScRg-Regular.woff2") format("woff2");
+  font-weight: 400;
+  letter-spacing: 1px;
+  font-style: normal;
+  font-display: swap;
+}
+
+* {
+  font-family: "PPRader", system-ui, -apple-system, sans-serif;
+}
+
+html,
+body,
+#root {
+  overscroll-behavior: none;
+  height: 100%;
+  margin: 0;
+  background: white;
+}
+
+.smplr-wrapper {
+  position: relative;
+  width: 100%;
+  max-width: calc((16 / 9) * 75vh);
+  aspect-ratio: 16 / 9;
+  background-color: #ecf1f5;
+  margin: 0 auto;
+}
+
+.smplr-embed {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.mapboxgl-ctrl-bottom-right,
+.mapboxgl-ctrl-bottom-left {
+  display: none !important;
+}
+
+.glass-panel {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.hover-lift {
+  transition: all 0.3s ease;
+}
+
+.hover-lift:hover {
+  transform: translateY(-2px);
+}
+
+.primary-button {
+  background: black;
+  color: white;
+  border: none;
+  transition: all 0.3s ease;
+}
+
+.primary-button:hover {
+  background: #1daff7;
+  transform: translateY(-2px);
+}
+
+.underline-hover {
+  position: relative;
+}
+
+.underline-hover::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: 0;
+  height: 2px;
+  background: #1daff7;
+  transition: all 0.3s ease;
+}
+
+.underline-hover:hover::after {
+  width: 100%;
+  left: 0;
+}
+
+.minimal-nav {
+  font-feature-settings: "kern" 1, "liga" 1;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+@media (max-width: 768px) {
+  .minimal-nav {
+    display: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .logo-svg {
+    width: 65px;
+    height: auto;
+  }
+}

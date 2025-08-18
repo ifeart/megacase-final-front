@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<link rel="icon" type="image/svg+xml" href="/office.ico" />
+		<link rel="preload" href="/src/assets/NK57MonospaceScRg-Regular.woff2" as="font" type="font/woff2" crossorigin>
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<meta
+			http-equiv="Content-Security-Policy"
+			content="
+    default-src 'self';
+    script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' 'unsafe-eval' *.smplrspace.com;
+    style-src 'self' 'unsafe-inline' *.smplrspace.com;
+    style-src-elem 'self' 'unsafe-inline' *.smplrspace.com;
+    font-src 'self' *.smplrspace.com;
+    img-src * data: blob:;
+    media-src * data:;
+    connect-src * data:;
+    worker-src 'self' blob:;
+  "
+		/>
+		<link rel="stylesheet" href="/src/index.css" />
+		<title>OFFICE SPACE</title>
+	</head>
+	<body>
+		<div id="root"></div>
+		<script type="module" src="/src/main.tsx"></script>
+	</body>
+</html>

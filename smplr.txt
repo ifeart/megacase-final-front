@@ -1,0 +1,2373 @@
+документация библиотеки smplspace.js
+Smplrspace lets developers add digital and interactive floor plans to their apps easily. Floor plans can be viewed in 2D or 3D. Data layers can be added on the floor plans.
+To get started with Smplrspace, you will need an account. You can sign up from the website. All features come with a free tier so you can test things out and start building without friction (no credit card required).
+Embed options​
+To embed our floor plans in your app, you can either use our Javascript library, smplr.js.The Javascript library provides a fully typed API that lets you control the rendering of the floor plans with custom colors, behaviours and data layers.
+Smplr.js embeds​
+To embed floor plans using our Javascript library, first load it from our CDN. You will need the JS script itself and the CSS stylesheets. You could either load them yourself, or more simply use our NPM package to load the library.
+Loading from CDN​
+Add the following in the <head> section of your HTML file.
+<script src="https://app.smplrspace.com/lib/smplr.js"></script>
+<link href="https://app.smplrspace.com/lib/smplr.css" rel="stylesheet" />
+Learn more in the embedding spaces guide.
+
+Use our NPM package​
+🥇 This is the recommended way to use Smplr.js as it provides a better DX with a fully-typed API and code editor auto-completion. Firstly install our loader package with your preferred package manager:
+npm install @smplrspace/smplr-loader
+# OR
+yarn add @smplrspace/smplr-loader
+then import it in your code and load as follow:
+
+import { loadSmplrJs } from "@smplrspace/smplr-loader";
+
+loadSmplrJs()
+  .then((smplr) => {
+    /* enjoy a fully typed API and auto-completion */
+    const space = new smplr.Space({
+      spaceId: "spc_xxx",
+      clientToken: "pub_xxx",
+      containerId: "xxx",
+    });
+    space.startViewer({
+      preview: true,
+      onReady: () => console.log("Viewer is ready"),
+      onError: (error) => console.error("Could not start viewer", error),
+    });
+  })
+  .catch((error) => console.error(error));
+💡 Try it yourself in our interactive hello world example, which provides vanilla Javascript, vanilla Typescript and React starting points.
+
+🤖 Common types: the library also exposes a number of internal types that are commonly used in userland, like SmplrCoord3d, SpaceViewerOptions, etc. Feel free to explore these in your IDE.
+
+Note: smplr-loader is not the library itself, but a tiny package that loads the library from our CDN and applies types to the loaded module. We have plans to publish the smplr.js library itself to NPM in the future but our backend is not ready for it. See below for details.
+
+UMD vs ESM bundles & tree shaking​
+The simplest way to get started is to use our Universal Module Definition (UMD) bundle which loads all the required frontend code at once. The disadvantage is a longer loading time on the first visit, subsequent visits will usually be cached.
+
+In many cases, it is advisable to lazy load third party code to ensure a faster initial load time. Smplr.js supports "tree shaking" at runtime through our ES Modules (ESM) bundle. The ESM bundle provides an entry point with the minimal code required to get started. It pulls additional resources from our CDN depending on the features you use. We code-split, bundle, and lazy-load to ensure your application loads as fast as possible.
+
+To understand how to load the UMD/ESM bundles from our CDN, refer to the embedding spaces guide.
+
+To choose between UMD and ESM using smplr-loader, simply provide your preferred bundle type as the first argument to loadSmplrJs. The default is 'esm'.
+
+// default is 'esm'
+loadSmplrJs();
+loadSmplrJs("esm").then(...);
+
+// or opt in to 'umd'
+// e.g. if your environment doesn't support ESM
+loadSmplrJs("umd").then(...);
+Warning against self-hosting smplr.js​
+You should not try to use a copy of the library files that you self host. Our frontend and backend resources need to be synced at the commit level to avoid data corruption, loading a copy might break your integration as you might not be using the latest version if we deploy a new version of the platform.
+
+A smplr.js npm package is on our roadmap but not ready yet due to blockers on the versioning side of things in our database. This remains a priority for us as we understand most engineering team prefer to include pinned versions of their dependencies in their own bundles. We will update our users once this is available.
+
+Preview images​
+Embeds are usually displayed with a static preview image and a button to initiate the interactive session. It works similarly to YouTube videos that require for the user to click "start" before loading the actual video. This is to ensure the page loads fast, and the interactive content is only loaded (and charged) for actual interactive sessions.
+
+For a better experience, remember to generate a preview image once your space is ready. To do so, click on the name of the space (top left) in the editor, then head to the "Services" tab in the right pane, and click "Create preview image". A modal will open to let you position the viewer, you can change the size of the preview image you would like to save, and click "Snap" once ready. It will be saved to our servers and loaded automatically when required.
+
+Embedding spaces
+Embed options​
+Iframe​
+The simplest and least powerful way to embed a Smplrspace floor plan is to use our iframe embeds. If all you require is to showcase the floor plan, with no particular option or custom data / UI, this might be what you need. Head to the getting started section to learn how.
+
+Loading smplr.js using our loader NPM package 🥇​
+💡 This is the best and recommended way to use smplr.js. It provides a typed library which will autocomplete in your editor and help you avoid some mistakes. It is also in line with all our examples.
+
+👉 To learn how to use the smplr-loader NPM package, please refer to the getting started section.
+
+Loading smplr.js (UMD) from our CDN​
+This loads a single JS file (bundle) containing all the required frontend code at once. Learn more in the getting started section.
+
+Smplr.js will not be typed using this method.
+
+<!-- in the <head> section of your HTML -->
+<script src="https://app.smplrspace.com/lib/smplr.js"></script>
+<link href="https://app.smplrspace.com/lib/smplr.css" rel="stylesheet" />
+
+<!-- at the end of the <body> section of your HTML -->
+<script>
+  const space = new smplr.Space({
+    spaceId: "spc_xxx",
+    clientToken: "pub_xxx",
+    containerId: "xxx",
+  });
+  space.startViewer({
+    preview: true,
+    onReady: () => console.log("Viewer is ready"),
+    onError: (error) => console.error("Could not start viewer", error),
+  });
+</script>
+Loading smplr.js (ESM) from our CDN​
+This lazy loads our code at runtime as ES Modules (ESM) and supports tree shaking for faster load times. Learn more in the getting started section.
+
+Smplr.js will not be typed using this method.
+
+<!-- in the <head> section of your HTML -->
+<link href="https://app.smplrspace.com/lib/smplr.css" rel="stylesheet" />
+
+<!-- at the end of the <body> section of your HTML -->
+<!-- this technique uses dynamic imports -->
+<script>
+  import("https://app.smplrspace.com/lib/smplr.mjs").then((smplr) => {
+    const space = new smplr.Space({
+      spaceId: "spc_xxx",
+      clientToken: "pub_xxx",
+      containerId: "xxx",
+    });
+    space.startViewer({
+      preview: true,
+      onReady: () => console.log("Viewer is ready"),
+      onError: (error) => console.error("Could not start viewer", error),
+    });
+  });
+</script>
+Embed in a Next.js app​
+We're not Next.js developers ourselves, but from what we understand from users building on Next.js, the smplr-loader package may not work due to its use of dynamic imports.
+
+Here is how they've approached it.
+
+Use the Script component to load the library.
+Optionally use smplr-loader to get the types, but do not load the library with it.
+You can refer to this gist shared by the amazing Sean at Strella!
+
+Another thing to note is that you may need to disable TurboPack in recent versions of Next.js as it seems to be incompatible with on-the-fly loading of libraries.
+
+Securing your data​
+We take the security and privacy of your data with great importance. Smplrspace was built from the get go with the mindset that you should own your data and it should not transit through our servers when not necessary. This is why the data layers are built around frontend APIs that let you "stitch" data that you pull yourself from your own storage. That data never transits through our servers, neither do we have visibility over it even existing.
+
+In addition, we do our best to protect the data that we do store (your floor plans) from unintended access. Below are the few features that you can rely on to secure their access.
+
+Client tokens​
+Client tokens are keys required when requesting a floor plan. The request will only be processed if the token provided in the Space object matches one of the organisation's token. To manage your tokens, head to the Developers page in the Smplrspace app, which is accessible from the main menu. You can create as many tokens as needed and revoke them anytime. We advise to rotate the tokens on a regular basis for increased protection.
+
+Authorized domains​
+Another efficient way to secure access to your floor plans is to restrict which domains are authorized to make requests to access them. To manage the authorized domains, head to the Developers page in the Smplrspace app, which is accessible from the main menu. You can add as many authorized domains or subdomains as you need. You can use wildcards such as *.smplrspace.com to allow multiple subdomains. We use glob patterns and match them using minimatch. The default value is * and allows any domain. An empty value behaves like *.
+
+Content Security Policy (CSP)​
+Adding a CSP directive to your app is an added layer of security that helps to detect and mitigate certain types of attacks, including Cross-Site Scripting (XSS) and data injection attacks. It can be configured through having your server return the Content-Security-Policy HTTP header, or by adding a <meta> element to the <head> section of your page. Below is the minimal CSP required to be able to use smplr.js.
+
+<meta
+  http-equiv="Content-Security-Policy"
+  content="default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' 'unsafe-eval' *.smplrspace.com; style-src 'self' 'unsafe-inline'; font-src 'self' *.smplrspace.com; img-src * data: blob:; media-src * data:; connect-src * data:; worker-src 'self' blob:;"
+/>
+Here is a breakdown of the directive:
+
+*.smplrspace.com is added as a domain to load the library and the fonts used in the viewer.
+unsafe-inline for scripts and styles is commonly used for React app, our viewer is React based.
+img-src * data: and media-src * data: are needed to load assets from storage locations.
+connect-src * data: is needed to load icons, fonts, other assets and supports error reporting.
+wasm-unsafe-eval allows the usage of the draco decoder over WASM. It can be omitted if your floor plans do not use non-parametric 3D equipment models.
+unsafe-eval allows the usage of the draco decoder over WASM in iOS Safari. It can be omitted if your floor plans do not use non-parametric 3D equipment models or do not target iOS Safari as a browser.
+worker-src 'self' blob: is required by the draco decoder as well. It can be omitted if your floor plans do not use non-parametric 3D equipment models.
+Smplrspace IDs
+General concept​
+From v2.29.0 onward, we've started to introduce the Smplrspace ID, or SID, for our spaces (and soon other objects). This will gradually replace the UUIDs we've been using until now.
+
+SIDs are inspired by the Object IDs used at Stripe, which are known for their superior developer experience (DX). You can learn more about their design in this excellent blog post by Paul Asjes. We've combined this approach with the work on cuid2 by Eric Elliott and co.
+
+This gives us IDs that are:
+
+shorter: spc_hhlsysya vs 8d33f509-323b-411f-9dda-69e6cf75efde
+secure and collision resistant at scale
+offline compatible
+url friendly
+human readable and clear about intent, thanks to the prefix
+less prone to human errors, thanks to the prefix
+helpful to build internal tools, thanks to the prefix
+and last but not least: easy to copy, double click a SID and it works 🎉
+TL;DR: better DX and better UX.
+
+Prefixes in use​
+spc_    space
+prj_    project
+rpt_    report
+rpg_    report page
+ds_     data source
+eqmt_   equipment
+That's it, pretty short list ;). More will come soon.
+
+Migrating from UUIDs​
+Right now, the deprecated UUIDs are supported to ensure backward compatiblity, but you should start planning to update your data to the new SIDs. To help you retrieve the SID for all your spaces at once, we've added the listSpaces endpoint to the QueryClient.
+
+You can either use smplr.js and the QueryClient to help you call the endpoint in Javascript. Alternatively, below is the corresponding curl command to get the same data:
+
+curl --request GET \
+  --url https://api.smplrspace.com/smplrjs/listSpaces \
+  --header 'x-smplrspace-organization-id: xxx' \
+  --header 'x-smplrspace-client-token: pub_xxx'
+x-smplrspace-organization-id corresponds to organizationId in QueryClient and is the unique identifier of your organization in Smplrspace, something like "spc_xxx". Personal accounts are also treated as "personal organization". To get your organization's ID, head to the Developers page from the main menu.
+x-smplrspace-client-token corresponds to clientToken in QueryClient and is an API token that is used to authenticate requests. You can manage your organisation's tokens in the Smplrspace app, by heading to the Developers page from the main menu. More info.
+
+Data layers
+The introduction to data layers and how to add, update and remove them is in the overview page. Below, we describe the different layer types and their respective options.
+
+Tip for Typescript users: Typescript sometimes struggles to infer the type of layer you're using based on the options, you can help it by using a type-specific variant of addDataLayer like addPointDataLayer. This will makes its job easier, and you're understanding of any potential error less of a "pulls hair" experience 😉.
+
+Generic options​
+Some options correspond to generic behaviours that are shared by all interactive data layers, making it easy to swap between similar layer types (e.g. "point" and "icon").
+
+space.addDataLayer({
+  // ...layerDefinition
+  tooltip?: (dataElement: object) => string | HTMLString
+  tooltipTemplate?: string
+  tooltipContainerStyle?: string
+  persistentTooltip?: boolean
+  legend?: LegendConfig // see below
+  onClick?: (dataElement: object, event: PointerEvent) => void
+  onHover?: (dataElement: object, event: LimitedPointerEvent) => void
+  onHoverOut?: (dataElement: object, event: LimitedPointerEvent) => void
+}) => DataLayerController
+
+type LegendConfig =
+  | {
+    type: 'numeric'
+    colorScale: (n: number | null | undefined) => string
+    domain?: [number, number]
+    ticks?: Record<number, number | string>
+  }
+  | {
+    type: 'swatches'
+    swatches: {
+      color: string
+      label: string
+      group?: string
+    }[]
+  }
+  | {
+    type: 'icons'
+    icons: {
+      url: string
+      label: string
+      group?: string
+    }[]
+  }
+...layerDefinition - refer to the overview page.
+tooltip - optional - is taking the newly hovered data element as argument and should return the content of the tooltip to render. It is called once when the pointer starts to hover a data element. Built-in tooltips support string and "HTML as string" values.
+For string values, newlines are supported by using multi-line template literals.
+For HTML values, both HTML and CSS are supported, the value will be sanitized to prevent XSS attacks.
+If you need complete control over the tooltip content (e.g. for a React component), check the tooltips example.
+tooltipTemplate - optional - is a fully featured template string used to generate the tooltip content based on the data for the hovered element. It is powered by Handlebars with some custom helpers. Read more below.
+tooltipContainerStyle - optional - lets you override the style of the tooltip container with inline CSS.
+persistentTooltip - optional - set this to true to turn tooltips into small cards that are all visible at once instead of on hover. Persistent tooltips are automatically positioned on the center of the data element they're attached to. They disappear when the camera is moving and reappear when it stops. They are only displayed for the top visible level. They only work for data elements with a non null or undefined id. Default value: false
+legend - optional - lets you configure a legend to be rendered automatically in a collapsible overlay on the viewer. The legend can be positioned using legendPosition in viewer options.
+For numeric legends, refer to options in the legend section.
+For swatches legends, refer to options in the legend section.
+For icons legends, refer to options in the legend section.
+onClick - optional - is taking the data element that was clicked as argument, as well as the Javascript pointer event that triggered the click. It is called each time a click or tap event happens.
+onHover - optional - is taking the newly hovered data element as argument, as well as a limited (due to the rendering engine's internals) "pointer event" that triggered the handler. The limited event only includes the coordinates within the viewer of the pointer at the time when the event was triggered. The handler is called once when the pointer starts to hover a data element.
+onHoverOut - optional - is taking the previously hovered data element as argument, as well as the same limited "pointer event" as for onHover. The handler is called once when the pointer stops hovering a data element.
+You may use the onClick, onHover and onHoverOut handlers to build custom behaviours in your app that respond to interactions happening in the floor plan.
+
+Handlebars helpers​
+As detailed above, the tooltipTemplate option is powered by Handlebars and you may refer to the full templating documentation here. It supports HTML, nested fields access, conditionals, loops, and more. We also setup custom helpers as documented below:
+
+fallback - lets you use fallback default values as {{fallback [my field] 'default value'}}. We use '-' as a default value for all fields.
+formatDate - lets you format dates using Moment.js as {{formatDate [my field] 'DMMMYY'}}.
+formatNumber - lets you format numbers using Numeral.js as {{formatNumber [my field] '0,0.00'}}.
+Types of layers​
+Point layer​
+A point layer has each data element rendered as a sphere.
+
+space.addDataLayer({
+// OR
+space.addPointDataLayer({
+  id: string
+  type: 'point'
+  shape: 'sphere' | 'cube'
+  data: [{
+    id: string | number
+    position: {
+      levelIndex: number
+      x: number
+      z: number
+      elevation: number
+    }
+    ...customData: object
+  }]
+  color?: string | (dataElement: object) => string
+  anchor?: 'bottom' | 'center' | 'top'
+  alpha?: number
+  onDrag?: ({ data: object }) => void
+  onDrop?: ({ data: object; position: object }) => void
+  disableElevationCorrection?: boolean
+  // sphere shape options
+  diameter?: number | (dataElement: object) => number | { x: number; y: number; z: number }
+  // cube shape options
+  size?: number
+  width?: number
+  height?: number
+  depth?: number
+  scale?: (dataElement: object) => number | { x: number; y: number; z: number }
+}) => DataLayerController
+id is a unique identifier for this layer which is used for updates.
+shape is the the 3D shape used to render each data element. Each shape comes with its own options defined below.
+data is an array of objects (refered to as data elements) to be rendered. Each element must have an id (unique identifier within the data array) and a position. Elements can also contain any additional custom data used for rendering options.
+color - optional - defines the color of the element to render. It can be defined as any valid CSS color string like "orange" or "#3a3c3c", and applied for all elements or per element with a function that takes each element as argument and returns the color string for that element. Default value: "#2393d4"
+anchor - optional - defines if the position provided for each data element corresponds to the bottom, center or top of the sphere. Default value: center.
+alpha - optional - defines the transparency of the spheres for the whole layer. Element specific alpha value is not supported. The value should be between 0 (invisible) and 1 (opaque). Default value: 1
+onDrag, onDrop - optional - providing either or both handlers will make data elements of the layer draggable. Each handler takes the dragged data element as argument. onDrop also receives the new position of the element so it can be updated in your app state and database.
+disableElevationCorrection - optional
+In 2D mode, the rendered elevation of points is fully managed and the provided value ignored. Points will be rendered on top of the floor plans.
+In 3D mode, points are rendered at their provided elevation but points with low elevation will automatically be rendered above the ground to avoid being hidden. You can set disableElevationCorrection to true to disable this behavior. The elevation value of each point will then be used directly.
+Sphere shape options​
+diameter - optional - defines the diameter of the sphere to render in meters. It can be defined as a number for all elements or per element with a function that takes each element as argument and returns the diameter for that element. The diameter can be a number to render a perfectly round sphere, or an object providing the "diameter" per axis to render ellipsoids. Default value: 1m.
+Cube shape options​
+size - optional - defines the default size of each side of the cube in meters. Default value: 1m.
+width - optional - defines the width of the cube in meters. Default value: same as size.
+height - optional - defines the height of the cube in meters. Default value: same as size.
+depth - optional - defines the depth of the cube in meters. Default value: same as size.
+scale - optional - defines the per-data-element multiplication factor to the size of the cubes. It is a function that takes each element as argument and returns the scale factor for that element. The scale factor can be a number for uniform scaling in all directions, or an object providing one factor per axis.
+The internet of things example provides code implementation of point data layers. The add data elements example gives a full overview of draggable layers.
+
+Icon layer​
+An icon layer has each data element rendered as an icon (it's a sprite for readers familiar with 3D rendering).
+
+space.addDataLayer({
+// OR
+space.addIconDataLayer({
+  id: string
+  type: 'icon'
+  data: [{
+    id: string | number
+    position: {
+      levelIndex: number
+      x: number
+      z: number
+      elevation: number
+    }
+    ...customData: object
+  }]
+  icon: IconSource | (dataElement: object) => IconSource // see IconSource below
+  width?: number | (dataElement: object) => number
+  colorOverlay?: string | ((dataElement: object) => string)
+  onDrag?: ({ data: object }) => void
+  onDrop?: ({ data: object; position: object }) => void
+  disableElevationCorrection?: boolean
+}) => DataLayerController
+
+type IconSource =
+  | { 
+    url: string 
+    width: number
+    height: number
+  } 
+  | { 
+    blob: Blob; 
+    blobIdOrHash: string 
+    width: number
+    height: number
+  }
+id is a unique identifier for this layer which is used for updates.
+data is an array of objects (refered to as data elements) to be rendered. Each element must have an id (unique identifier within the data array) and a position. Elements can also contain any additional custom data used for rendering options.
+icon provides information about the icon file to use. It can be defined as a "source" for all elements or per element with a function that takes each element as argument and returns the "source" for that element. There are 2 options available:
+Option 1: url — Icons must be self-hosted, width and height indicate the "native" dimensions of the icon available at url. Only PNG and JPEG files are supported.
+Option 2: blob — Instead of a URL, you can pass in a Javascript Blob that contains the icon file. This lets you pre-load icons in custom ways. Also, it allows for programmatic image manipulation on your icons, prior to passing them to the data layer, e.g. using an offscreen canvas. When using a blob, you should also provide a blobIdOrHash string that must be unique for each file/blob you pass in. This hash is not automatic for performance reason, we could result to complex computations, but you are likely to have a simple heuristic to use when passing in the blob. Just like with the url option, width and height indicate the "native" dimensions of the icon and must be passed in.
+width - optional - defines the width of the icon to render in meters. It can be defined as a number for all elements or per element with a function that takes each element as argument and returns the width for that element. Default value: 1m.
+colorOverlay - optional - lets you programmatically control the color of your icons. It applies an overlay of the specified color to the icon. It works best on black and white icons. It can be defined as any valid CSS color string like "orange" or "#3a3c3c", and applied for all elements or per element with a function that takes each element as argument and returns the color string for that element.
+onDrag, onDrop - optional - providing either or both handlers will make data elements of the layer draggable. Each handler takes the dragged data element as argument. onDrop also receives the new position of the element so it can be updated in your app state and database.
+disableElevationCorrection - optional
+In 2D mode, the rendered elevation of icons is fully managed and the provided value ignored. Icons will be rendered on top of the floor plans.
+In 3D mode, icons are rendered at their provided elevation but icons with low elevation will automatically be rendered above the ground to avoid being hidden. You can set disableElevationCorrection to true to disable this behavior. The elevation value of each icon will then be used directly.
+The carpark example demonstrate a number of options available on the icon data layers. The add data elements example gives a full overview of draggable layers.
+
+Polygon layer​
+A polygon layer has each data element rendered as an extruded polygon. It is useful to highlight rooms or specific zones in the floor plan.
+
+space.addDataLayer({
+// OR
+space.addPolygonDataLayer({
+  id: string
+  type: 'polygon'
+  data: [{
+    id: string | number
+    coordinates: [{
+      levelIndex: number
+      x: number
+      z: number
+    }] | [[{
+      levelIndex: number
+      x: number
+      z: number
+    }]]
+    ...customData: object
+  }]
+  baseHeight?: number | (dataElement: object) => number
+  height?: number | (dataElement: object) => number
+  color?: string | (dataElement: object) => string
+  alpha?: number
+  onDrag?: ({ data: object }) => void
+  onDrop?: ({ data: object; coordinates: object[] | object[][] }) => void
+  disableElevationCorrection?: boolean
+  disableReshape?: boolean
+  reshapeBoxColor?: string
+}) => DataLayerController
+id is a unique identifier for this layer which is used for updates.
+data is an array of objects (refered to as data elements) to be rendered. Each element must have an id (unique identifier within the data array) and a coordinates array.
+coordinates in its simple form is an array of points in the 2D horizontal space, it can also be an array of "rings" where the first ring is the external perimeter of the polygon, and the others are "holes" cut into the external perimeter.
+customData - optional - elements can also contain any additional custom data used for rendering options.
+baseHeight - optional - defines the elevation from the ground at the base of the polygon in meters. It can be defined as a number for all elements or per element with a function that takes each element as argument and returns the base height for that element. Default value: 0m.
+height - optional - defines the height of the polygon in meters from its base to its top. It can be defined as a number for all elements or per element with a function that takes each element as argument and returns the height for that element. Default value: 3m.
+color - optional - defines the color of the element to render. It can be defined as any valid CSS color string like "orange" or "#3a3c3c", and applied for all elements or per element with a function that takes each element as argument and returns the color string for that element. Default value: "#2393d4"
+alpha - optional - defines the transparency of the spheres for the whole layer. Element specific alpha value is not supported. The value should be between 0 (invisible) and 1 (opaque). Default value: 1
+onDrag, onDrop - optional - providing either or both handlers will make data elements of the layer draggable & reshapable. Each handler takes the dragged data element as argument. onDrop also receives the new coordinates of the element so they can be updated in your app state and database.
+disableElevationCorrection - optional
+In 2D mode, the rendered height of polygons is fully managed and the provided value ignored. Polygons will be rendered on top of the grounds and below the walls.
+In 3D mode, polygons are rendered at with provided height but polygons with low height will automatically be rendered above between the grounds and the walls, to avoid being hidden. You can set disableElevationCorrection to true to disable this behavior. The height value of each polygon will then be used directly.
+disableReshape - optional - set this to false when using onDrag or onDrop if you want the polygons to be draggable but not modifiable in shape. Default value: true
+reshapeBoxColor - optional - hexadecimal string defining the color of the boxes used to reshape the polygons. Used in conjunction with onDrag or onDrop. Default value: "#086bb7"
+The leasing & tenancy example provides a simple implementation of a polygon data layer. The Add data elements example gives a full overview of draggable & reshapable layers.
+
+Polyline layer​
+A polyline layer has each data element rendered as a line with one or more segments. The line is similar to a "pipe" which has a circle section by default but can take any section shape. The scale (you can think of it as the "diameter") of the pipe can be constant, or computed by section to generate patterns.
+
+space.addDataLayer({
+// OR
+space.addPolylineDataLayer({
+  id: string
+  type: 'polyline'
+  data: [{
+    id: string | number
+    coordinates: [{
+      levelIndex: number
+      x: number
+      z: number
+      elevation: number
+    }]
+    ...customData: object
+  }]
+  shape?: 'circle' | 'triangle' | 'square' | 'pentagon' | 'hexagon' | [number, number][]
+  cap?: boolean
+  scale?: number | ({ data: object; stepIndex: number; distance: number }) => number
+  stepSize?: number
+  color?: string | (dataElement: object) => string
+  alpha?: number
+  onDrag?: ({ data: object }) => void
+  onDrop?: ({ data: object; coordinates: object[] }) => void
+  disableElevationCorrection?: boolean
+  disableReshape?: boolean
+  reshapeBoxColor?: string
+}) => DataLayerController
+id is a unique identifier for this layer which is used for updates.
+data is an array of objects (refered to as data elements) to be rendered. Each element must have an id (unique identifier within the data array) and a coordinates array. Elements can also contain any additional custom data used for rendering options.
+shape - optional - defines the section that is extruded to render the line. A few options are provided, each of them a regular polygon centered on the line path and with its points on a circle of diameter 1m. You can also provide a custom shape with an array of coordinates in meter taking the line path as origin, the first coordinate on the horizontal axis and the second on the vertical axis (e.g. [[0, -0.2], [0, 0.2], [0.2, 0], [0, -0.2]] for a triangle pointing right). Custom shapes are not automatically closed, you should repeat the first coordinate at the end of the array to close the shape. Default value: circle
+cap - optional - set value to false if you want the line shape to be hollow. Default value: true
+scale - optional - defines the scaling factor applied to the shape during the extrusion. This can be a constant (e.g. circle pipe of diamter 0.5m), or a function of the data element, the step index along the line path, and the distance from the start of the line. A function is useful to create patterns along the line. The scale function is computed at each point defining the line path, you can add "steps" to each segment to compute the scale at regular interval with stepSize (see below). Default value: 1
+stepSize - optional - you should only use this parameter alongside a scale function. It adds additional steps at regular interval on each segment of the line. The step size will not necessarily be exact as the algorithm will prioritize to get full steps over keeping to the step size.
+color - optional - defines the color of the element to render. It can be defined as any valid CSS color string like "orange" or "#3a3c3c", and applied for all elements or per element with a function that takes each element as argument and returns the color string for that element. Default value: "#2393d4"
+alpha - optional - defines the transparency of the spheres for the whole layer. Element specific alpha value is not supported. The value should be between 0 (invisible) and 1 (opaque). Default value: 1
+onDrag, onDrop - optional - providing either or both handlers will make data elements of the layer draggable & reshapable. Each handler takes the dragged data element as argument. onDrop also receives the new coordinates of the element so it can be updated in your app state and database.
+disableElevationCorrection - optional
+In 2D mode, the rendered elevation of polylines is fully managed and the provided value ignored. Polylines will be rendered on top of the floor plans.
+In 3D mode, polylines are rendered at their provided elevation but polyline coordinates with low elevation will automatically be rendered above the ground to avoid being hidden. You can set disableElevationCorrection to true to disable this behavior. The elevation value of each coordinate will then be used directly.
+disableReshape - optional - set this to false when using onDrag or onDrop if you want the polygons to be draggable but not modifiable in shape. Default value: true
+reshapeBoxColor - optional - hexadecimal string defining the color of the boxes used to reshape the polygons. Used in conjunction with onDrag or onDrop. Default value: "#086bb7"
+The Add data elements example gives a full overview of draggable & reshapable layers, including a polyline layer.
+
+Dotted polyline layer​
+A dotted polyline layer is similar to a polyline layer but has each data element rendered as a line of spheres. Also lines can be animated with a few styles.
+
+space.addDataLayer({
+// OR
+space.addDottedPolylineDataLayer({
+  id: string
+  type: 'dotted-polyline'
+  data: [{
+    id: string | number
+    coordinates: [{
+      levelIndex: number
+      x: number
+      z: number
+      elevation: number
+    }]
+    ...customData: object
+  }]
+  diameter?: number | (dataElement: object) => number
+  gap?: number
+  anchor?: 'bottom' | 'center' | 'top'
+  color?: string | (dataElement: object) => string
+  alpha?: number
+  disableElevationCorrection?: boolean
+  animation?: false | 'waves' | 'railway'
+  // waves animation options
+  speed?: number
+  amplitude?: number
+  waves?: number
+  // railway animation options
+  speed?: number
+}) => DataLayerController
+id is a unique identifier for this layer which is used for updates.
+data is an array of objects (refered to as data elements) to be rendered. Each element must have an id (unique identifier within the data array) and a coordinates array. Elements can also contain any additional custom data used for rendering options.
+diameter - optional - defines the diameter of the sphere to render in meters. It can be defined as a number for all elements or per element with a function that takes each element as argument and returns the diameter for that element. Default value: 1m.
+gap - optional - defines the distance between each sphere in the line as a fraction of the diameter. E.g. 0.3 means the gap is 30% of the diameter. Default value: 0.3.
+anchor - optional - defines if the position provided for each data element corresponds to the bottom, center or top of the sphere. Default value: center.
+color - optional - defines the color of the element to render. It can be defined as any valid CSS color string like "orange" or "#3a3c3c", and applied for all elements or per element with a function that takes each element as argument and returns the color string for that element. Default value: "#2393d4".
+alpha - optional - defines the transparency of the spheres for the whole layer. Element specific alpha value is not supported. The value should be between 0 (invisible) and 1 (opaque). Default value: 1.
+disableElevationCorrection - optional
+In 2D mode, the rendered elevation of dotted polylines is fully managed and the provided value ignored. Dots will be rendered on top of the floor plans.
+In 3D mode, dots are rendered at their provided elevation but dots with low elevation will automatically be rendered above the ground to avoid being hidden. You can set disableElevationCorrection to true to disable this behavior. The elevation value of each coordinate will then be used directly.
+animation - optional - use false to disable animation, 'railway' to move spheres in a queue like wagons, or 'waves' to scale spheres like a wave. Default value: false.
+Waves animation options​
+speed - optional - defines the speed of the animation. Speed 1 means it takes 1 second for a wave to go up and down for each sphere. Default value: 1.
+amplitude - optional - defines the scaling factor of the waves, so 0.4 means each sphere will grow 40% of its diameter. Default value: 0.4.
+waves - optional - defines the number of waves visible on each line at a single point of time. Default value: 1.
+Railway animation options​
+speed - optional - defines the speed of the animation. Speed 1 means each sphere gets to next one in 1 second. Default value: 1.
+Live code example coming soon.
+
+Furniture layer​
+A furniture layer has each data element mapped to one or more pieces of furniture (now called equipment in the app) from the floor plan. Furniture are only available in 3D mode at the moment. 2D mode support is on the roadmap.
+
+space.addDataLayer({
+// OR
+space.addFurnitureDataLayer({
+  id: string
+  type: 'furniture'
+  data: [{
+    id: string | number
+    furnitureId: string | [string]
+    ...customData: object
+  }]
+  color?: string | (dataElement: object) => string
+}) => DataLayerController
+id is a unique identifier for this layer which is used for updates.
+data is an array of objects (refered to as data elements) to be rendered. Each element must have an id (unique identifier within the data array) and a furnitureId (value mapping to the unique identifier(s) of one or more furniture in the floor plan). Elements can also contain any additional custom data used for rendering options.
+color - optional - defines the displayed color of the furniture. It can be defined as any valid CSS color string like "orange" or "#3a3c3c", and applied for all elements or per element with a function that takes each element as argument and returns the color string for that element. Default value: "#2393d4"
+The space booking example provides a simple implementation of a furniture data layer.
+
+Heat map layer​
+A heat map layer renders a grid of colored "elements" representing the interpolated value of a given metric across the space, based on a few data points for that metric located in the space. The rendered size of each grid "element" communicates the confidence in the interpolated value. It is typically used to display environmental data that has some level of spatial continuity like temperature, air quality, or to a certain extent crowd density.
+
+Please take note: Heat map layers are non-interactive layers. Generic options do not apply.
+
+space.addDataLayer({
+// OR
+space.addHeatmapDataLayer({
+  id: string
+  type: 'heatmap'
+  style: 'spheres' | 'grid' | 'bar-chart'
+  data: [{
+    id: string | number
+    position: {
+      levelIndex: number
+      x: number
+      z: number
+    }
+    ...customData: object
+  }]
+  value: (dataElement: object) => number
+  color: (interpolatedValue: number) => string
+  gridSize?: number
+  gridFill?: number
+  alpha?: number
+  mask?: [{
+    levelIndex: number
+    x: number
+    z: number
+  }] | Record<number, [{
+    levelIndex: number
+    x: number
+    z: number
+  }]>
+  confidenceRadius?: number
+  disableElevationCorrection?: boolean
+  // spheres style options
+  elevation?: number
+  squishFactor?: number
+  // grid style options
+  elevation?: number
+  thickness?: number
+  // bar-chart style options
+  height: (interpolatedValue: number) => number
+}) => DataLayerController
+id is a unique identifier for this layer which is used for updates.
+style lets you choose between multiple rendering styles for the heat map. Each style comes with its own options defined below.
+data is an array of objects (refered to as data points) used as base for the value interpolation. Each data point must have an id (unique identifier within the data array) and a position provided in the 2D plane. Data points must contain the value to be used for interpolation, or the data required to compute that value. They can also contain any additional custom data.
+value is a function that takes each data point as argument and returns the value for that data point to be used in the interpolation of the heat map values.
+color defines the displayed color of the heat map. It is a function that takes an interpolated value as argument and returns the hexadecimal color string used to render the grid "element" with that value.
+gridSize - optional - defines the size in meters of each "cell" of the heat map grid. Default value: 1m.
+gridFill - optional - defines the size of each grid "element" relatively to its "cell". A value of 1 means the element fills up the cell, 0.9 would add a 10% padding, while 1.1 would add a 10% overflow. Default value: 1.
+alpha - optional - defines the transparency of the rendered grid "elements". The value should be between 0 (invisible) and 1 (opaque). Default value: 1.
+mask - optional - a 2D polygon coordinates array that lets you define the area where the heat map should be interpolated and rendered. By default, the space's footprint on the active level will be used as mask. You can also pass an object with a mask for each level, with the key being the levelIndex, and for levels with no mask, it will use the level's footprint.
+confidenceRadius - optional - defines the distance in meters from the provided data points where interpolation makes sense. Grid "elements" are rendered at their nominal size (see gridSize and gridFill) when they are in close proximity to a datapoint. As they get further, their rendered size decreases (linearly to the distance to the nearest data point) as a way to communicate the confidence in the interpolated value. When a grid "element"'s distance to the nearest datapoint reaches the confidenceRadius value, it's rendered size reaches 0. By default, the confidenceRadius value is equal to the median of the distance between each data point and its 2 nearest datapoints.
+disableElevationCorrection - optional
+In 2D mode, the rendered elevation of heat maps is fully managed and the provided value ignored. Heat maps will be rendered on top of the floor plans.
+In 3D mode, heat maps are rendered at their provided elevation but low elevation values will automatically be rendered above the ground to avoid being hidden. You can set disableElevationCorrection to true to disable this behavior. The elevation value will then be used directly.
+Spheres style options​
+elevation - optional - is the height in meters from the active level's ground where the grid "elements" should be rendered. Default value: 3m.
+squishFactor - optional - lets you deform the spheres in the vertical axis. A value of 0 gives you a perfectly rounded sphere, 0.3 an M&M's type pill, 0.99 a flat sphere, and -2 an elongated ellipsoid. Default value: 0.
+Grid style options​
+elevation - optional - is the height in meters from the active level's ground where the grid "elements" should be rendered. Default value: 3m.
+thickness - optional - defines the height in meters of each cube making up the grid. Default value: 0.03m.
+You can for example set elevation to 0 and thickness to 3 to get a solid grid from the ground to the ceiling (assuming a 3m wall height).
+
+Bar chart style options (3D only)​
+height defines the height of each bar from the ground to the top. It is a function that takes an interpolated value as argument and returns the height in meters of the bar representing an element with that value.
+The air quality example uses a heat map layer and can be used as a code playground to test out the options. The timeheat demo showcases the capabilies of the heat map layer and provides a UI-based playground to test out options.
+
+Data layer controller​
+A controller for a given data layer is returned when you call addDataLayer as documented here.
+
+Update a layer (controller)​
+To update a layer with new data or options, you can use the controller of the layer as follow.
+
+layerController.update({
+  data: object[]
+  ...rest: object
+}) => void
+data & ...rest definitions are matching the ones provided for addDataLayer as documented here.
+Remove a layer (controller)​
+To remove a layer completely, you can use the controller as follow.
+
+layerController.remove() => void
+Get a data element position on screen​
+The data layer controller also lets you get the screen position of a data element. This can be useful to implement custom tooltips that you have full programmatic control over.
+
+layerController.getElementPositionOnScreen(elementId: string | number) => ({
+  screenX: number
+  screenY: number
+}) | null
+elementId corresponds to the id field used in the data array of your layer
+If an element is found with the id equals to elementId, the function returns its coordinates when projected on screen. When no element is found, the function returns null.
+
+Take good note: screenX and screenY are not bounded by the viewer itself, so you could have negative values, or values greater that the size of the viewer if the element is present in the 3D scene, but located outside of the current view.
+
+Custom UX
+Smplr.js provides a few options that help you customize the floor plan experience to your requirements. We're regularly adding new options, so reach out and share what you'd like to do with it.
+
+Adapting the look & feel and experience​
+Render options​
+To customize how the space viewer renders the space, you can pass in a number of options to the rendering engine. Below are the options currently exposed. Render options should be passed through startViewer as described right below, or updated dynamically as described further.
+
+interface SpaceRenderOptions {
+  backgroundColor?: string
+  grounds?: {
+    render?: boolean
+    includeLayers?: string[]
+    omitLayers?: string[]
+  }
+  walls?: {
+    render?: boolean
+    alpha?: number
+    maxHeightCm?: number
+    showStructuralWalls?: boolean
+    includeLayers?: string[]
+    omitLayers?: string[]
+  }
+  doors?: {
+    render?: boolean
+    includeLayers?: string[]
+    omitLayers?: string[]
+  }
+  windows?: {
+    render?: boolean
+    includeLayers?: string[]
+    omitLayers?: string[]
+  }
+  objects?: {
+    render?: boolean
+    includeLayers?: string[]
+    omitLayers?: string[]
+  }
+  annotations?: {
+    render?: boolean
+    includeLayers?: string[]
+    omitLayers?: string[]
+  }
+  stairs?: {
+    render?: boolean
+    includeLayers?: string[]
+    omitLayers?: string[]
+  }
+  compass?: boolean
+  floorplan?: {
+    render?: boolean
+    alpha?: number
+    elevationInCm?: number
+  }
+}
+backgroundColor - optional - lets you change the background color used by the viewer. You can pass any valid CSS color string, such as 'pink' or '#81b1b3'. We advise to set the same background color on the container element to keep the load screen consistent. As for the preview image, you can change its background color to match in the editor: go to the 'Services' tab and click 'Create preview image'.
+grounds - optional
+render - optional - set this value to control whether the grounds are rendered or not. Default value: true
+includeLayers - optional - set this value to chose which layers are to be rendered. Layers are string tags that you can set on each feature in the editor.
+omitLayers - optional - set this value to chose which layers are to not be rendered.
+walls - optional
+render - optional - set this value to control whether the walls are rendered or not. Note that with render: false, doors and windows will not be rendered either. You can use alpha: 0 instead if you want to render doors and windows but not walls. Default value: true
+includeLayers, omitLayers - optional - same as grounds above, with the addition that walls that constitute the facade of the building are automatically tagged smplr_facade as well.
+alpha - optional - is a number between 0 and 1 setting the opacity of the walls, 0 being transparent and 1 opaque. Default value: 1
+maxHeightCm - optional - will cap the rendering of walls to the height provided in centimeter, ignoring the actual height of walls.
+showStructuralWalls - optional - set this value to control whether the structural walls (if any) are rendered or not. This also removes the controls from the viewer. Default value: unset (use button control)
+doors - optional
+render - optional - set this value to control whether the doors are rendered or not. Default value: true
+includeLayers, omitLayers - optional - same as grounds above
+windows - optional
+render - optional - set this value to control whether the windows are rendered or not. Default value: true
+includeLayers, omitLayers - optional - same as grounds above
+stairs - optional
+render - optional - set this value to control whether the stairs are rendered or not. Default value: true
+includeLayers, omitLayers - optional - same as grounds above
+objects - optional
+render - optional - set this value to control whether the equipment (furniture, machinery, etc., if any) are rendered or not. Default value: true
+includeLayers, omitLayers - optional - same as grounds above
+annotations - optional
+render - optional - set this value to control whether the annotations (if any) are rendered or not. This also removes the show/hide annotations button from the viewer. Default value: unset (use button control)
+includeLayers, omitLayers - optional - same as grounds above
+compass - optional - set this value to control whether the compass (if any) is rendered or not. This also removes the show/hide compass button from the viewer. Default value: unset (use button control)
+floorplan.render - optional - set this value to control whether the floor plan image (if any) is rendered or not. Note that for multi-storey spaces, all levels will have their floor plan image rendered. Default value: false
+floorplan.alpha - optional - is a number between 0 and 1 setting the opacity of the floor plan image, 0 being transparent and 1 opaque. Default value: 0.5
+floorplan.elevationInCm - optional - is a number in centimeter setting the elevation from the ground at which the floor plan image is rendered. Default value: 2
+Get in touch if you have thoughts on other parameters we could expose to better support your needs.
+
+Viewer options​
+You can set a number of options when starting the viewer. They are listed below in addition to the basic viewer controls documented in the overview page.
+
+space.startViewer({
+  // ...basicControls
+  renderOptions?: SpaceRenderOptions
+  topShownLevel?: number
+  includeLevels?: number[]
+  cameraPlacement?: {
+    alpha?: number
+    beta?: number
+    radius?: number
+    target?: {
+      x?: number
+      y?: number
+      z?: number
+    }
+  },
+  disableCameraControls?: boolean,
+  disableCameraRotation?: boolean,
+  autoRotate?: boolean,
+  hideNavigationButtons?: boolean
+  hideLevelPicker?: boolean
+  hideControls?: boolean
+  controlsPosition?: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' | 'center-left' | 'center-right'
+  legendPosition?: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right'
+}) => void
+...basicControls - refer to the overview page.
+renderOptions - optional - is described above in Render options. Default value: {}.
+topShownLevel - optional - lets you set the initial level the viewer should navigate to. See details in Navigating levels.
+includeLevels - optional - list of zero-based indices of the levels to render. See includeLevels for details.
+cameraPlacement - optional - set the initial position and direction of the camera. See camera controls for more details.
+disableCameraControls - optional - set this to true so the camera placement cannot be changed by the user. This disables mouse, touch and keyboard inputs as well as removes the zoom control buttons. Default value: false
+disableCameraRotation - optional - set this to true to force a top view of the scene. It essentially gets the interactivity to match the 2D mode, but in 3D mode. Default value: false
+autoRotate - optional - set this to true to have the viewer spin around the space automatically. You can also start, set the rotation speed, and stop the rotation as described below. Default value: false
+hideNavigationButtons - optional - set this to true if you want the user to control the camera but want to remove the navigation buttons. Mouse, touch and keyboard inputs will work while the buttons are hidden. Default value: false
+hideLevelPicker - optional - set this to true if you want to remove the level picker from the viewer. Levels can still be controlled programmatically, so you could use your own buttons or logic. Default value: false
+hideControls - optional - set this to true if you want to remove all control buttons from the viewer. Default value: false
+controlsPosition - optional - lets you choose where the control buttons are rendered. Default value: 'bottom-left'
+legendPosition - optional - lets you choose where the legend (if any is configured in the data layers) is rendered. Default value: 'top-left'
+Viewer controls​
+Update render options dynamically​
+Render options are described in details in Render options. They can be set when the viewer starts, but if you need to update them dynamically, you should use the methods below:
+
+space.updateRenderOptions(options: SpaceRenderOptions) => void
+space.resetRenderOptionsToDefault() => void
+space.resetRenderOptionsToInitial() => void
+updateRenderOptions is used to update specific values, while keeping the others unchanged.
+options is an object of the SpaceRenderOptions interface, which is deeply merged with the current options used by the viewer. To "unset" an optional value, you can pass undefined explicitely.
+resetRenderOptionsToDefault reverts all values to the Smplrspace defaults.
+resetRenderOptionsToInitial reverts all values to the ones applied when calling startViewer.
+Switch between 2D and 3D​
+To programatically switch between 2D and 3D modes without restarting the viewer, you can call:
+
+space.setMode(mode: '2d' | '3d') => void
+mode - the desired rendering mode.
+Show/hide level picker​
+This is the programmatic equivalent of setting hideLevelPicker in startViewer:
+
+space.showLevelPicker() => void
+space.hideLevelPicker() => void
+Show/hide the navigation buttons​
+This is the programmatic equivalent of setting hideNavigationButtons in startViewer:
+
+space.showNavigationButtons() => void
+space.hideNavigationButtons() => void
+Navigate levels​
+This is the programmatic equivalent to pressing the level buttons in the bottom-left controls:
+
+space.showUpToLevel(levelIndex: number) => void
+levelIndex - zero-based index of the top level you want to see. For example, setting levelIndex to 2 is equivalent to pressing the L3 button.
+You can also reset the viewer back to showing all the levels with:
+
+space.showAllLevels() => void
+Control which levels are included in the render​
+When you have a multi-storey building but would like to only render a few floors, you can call this method:
+
+space.includeLevels(levelIndices: number[]) => void
+levelIndices - list of zero-based indices of the levels to render. See Navigating levels to learn more about levelIndex or level indices.
+You can also reset the viewer back to rendering all levels with:
+
+space.includeAllLevels() => void
+Camera controls​
+Get the camera placement​
+space.startViewer lets you define the initial placement of the camera using the cameraPlacement option. You would typically embed the viewer and have an interface to retrieve one or more placement(s) to be stored in your database. You can then load any placement object from your database to set the initial value. The camera placement can be retrieved with the following function:
+
+space.getCameraPlacement() => ({
+  alpha: number
+  beta: number
+  radius: number
+  target: {
+    x: number
+    y: number
+    z: number
+  }
+})
+The "placement" is a Javascript object that includes the position and direction of the camera. It is defined as an orbit position (alpha, beta, radius) around a target point which the camera points towards.
+
+alpha is the angle given in radians of the camera's position in the horizontal plane. -Math.PI/2 corresponds to position of the 2D editor.
+beta is the angle given in radians of the camera's position in the vertical plane. 0 corresponds to a top down view, while Math.PI/2 corresponds to a view from the ground.
+radius is the distance in meters between the camera and the target point.
+target is an object providing the (x,y,z) coordinates of the target point, which is the point where the camera is pointed towards.
+Set the camera placement​
+You can move the camera to a specific position and have it target a specific point as well by calling the following function:
+
+space.setCameraPlacement({
+  alpha?: number | (currentValue: number) => number
+  beta?: number | (currentValue: number) => number
+  radius?: number | (currentValue: number) => number
+  target?: {
+    x?: number | (currentValue: number) => number
+    y?: number | (currentValue: number) => number
+    z?: number | (currentValue: number) => number
+  }
+  animate?: boolean
+  animationDuration?: number
+}) => void
+placement parameters (see description above) can be provided as the new desired value, or a function taking the current value as sole argument and returning the desired value. All parameters are optional and the ones that are not provided will keep their current value.
+animate - optional - should be set to false to jump to the new placement and true to animate the camera to the new placement. Default value: false
+animationDuration - optional - defines the duration of the camera animation in seconds and should be used with animate set to true. Default value: 0.6
+See the controlled camera example to see this used in action.
+
+Center the camera on the space​
+This is the programmatic equivalent to pressing the center camera button in the bottom-left controls:
+
+space.centerCamera() => void
+Zoom in/out​
+This is the programmatic equivalent to pressing the zoom buttons:
+
+space.zoomIn() => void
+space.zoomOut() => void
+Auto-rotate the viewer​
+You can get the viewer to spin around the building at a certain speed. To start the rotation:
+
+space.startAutoRotation(speed?: number) => void
+speed - optional - sets how fast the rotation goes. Default value: 0.8.
+To stop the rotation:
+
+space.stopAutoRotation() => void
+Reacting to events from the viewer​
+You can add event listeners on the viewer to react to interactions happenning in it. The list of event types that can be observed is limited at the moment, and we'll be adding more based on users needs and demand.
+
+Event types available​
+The event types currently available are as follow:
+
+CameraStartedMoving - emitted once when the camera starts moving (rotate, pan, zoom)
+CameraStoppedMoving - emitted once when the camera stops moving
+Event types can be specified as string value or via the EventType Typescript enum. Both methods are type checked if you use Typescript.
+
+Add a listener​
+space.addEventListener(event: EventType | string, handler: () => void): number
+event - one of the event type listed above.
+handler - a function that will be called each time the event of the provided type is emitted.
+The function returns a unique listenerId that can be used to remove the listener.
+
+Remove a listener​
+space.removeEventListener(listenerId: number): void
+listenerId - unique id of the listener to remove, it is provided as return value when calling addEventListener.
+Clear listeners for a given event type​
+space.clearEventListeners(event: EventType | string): void
+event - one of the event type listed above.
+Clear all listeners​
+space.clearAllEventListeners(): void
+
+Embedding the map viewer
+Smplr.js makes a smplr object available on the global scope. One of the classes provided under this object is the Map class. It provides the API necessary to render the Smplrspace map viewer, a custom pre-configured Mapbox-based map which provide all the feature of Mapbox, plus Smplrspace specific features to render your spaces, add 3D cities based on OpenStreetMap data, add data layers, and more.
+
+Constructor​
+To create a Map instance, initialise it as follow.
+
+const map = new smplr.Map({
+  clientToken: string
+  containerId?: string
+  container?: HTMLElement
+  disableErrorReporting?: boolean
+}) => Map
+clientToken is an API token that is used to authenticate client-side requests. It is safe to have it exposed in your client code. You can manage your organisation's tokens in the Smplrspace app, by heading to the Developers page from the main menu. More info.
+containerId is the "id" of the html "div" container where smplr.js should render the viewer, something like "smplr-container" that can be found in your html. Only ids are supported, not classes.
+container is an alternative to containerId that lets you provide the HTML element directly instead of an id.
+disableErrorReporting - optional - can be set to "true" to disable the automated reporting of errors to our 3rd party error tracking tool, Sentry. We have discovered that Sentry's instrumentation could make it seem as if all network requests originated from smplr.js. Unfortunately, there is nothing simple we can do on our side to avoid that. If this is an issue for you, you can disable Sentry altogether. The tradeoff is that we will not automatically detect errors hapenning in your integration, and you may need to be more proactive to report them for us to roll out fixes.
+Interactive map viewer session​
+Start the viewer​
+To initiate an interactive viewer session, use the following code.
+
+map.startViewer({
+  spaceIds?: string[]
+  osmBuildings?: boolean
+  hash?: boolean
+  fitNewSpacesInScreen?: boolean
+  loadingMessage?: string
+  forceLoader?: boolean
+  onReady?: () => void
+  onError?: (errorMessage: string) => void
+  onSpaceClick?: ({ space, levelIndex }: { space: object | undefined; levelIndex: number }) => void
+  hideNavigationButtons?: boolean
+  hideLevelPicker?: boolean
+  hideControls?: boolean
+  controlsPosition?: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' | 'center-left' | 'center-right'
+  legendPosition?: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right'
+}) => Promise<void>
+spaceIds - optional - lets you specify the Smplrspace ID ("spc_xxx") of the spaces to render on the map when initializing the viewer. You can also do that dynamically as described on the Building page.
+osmBuildings - optional - lets you choose whether to render or not cities in 3D. City buildings data comes from OpenStreetMap and is automatically rendered in 3D. You can also do that dynamically as described in 3D cities. Default value: true.
+hash - optional - lets you choose whether to automatically sync the map location to the hash fragment of the page's URL. This makes it for easy to share links to specific map locations. It relies on Mapbox's corresponding parameter. Default value: false.
+fitNewSpacesInScreen - optional - lets you choose whether to automatically recenter the map to fit all the spaces when the spaces rendered on the map change. You can also center the map using fitAllSpacesInScreen. Default value: true.
+loadingMessage - optional - lets you override the text displayed while the space is loading. This can be change dynamically as well, see UI controls. Default value: "Loading map".
+forceLoader - optional - provides programmatic control to whether the loader should be displayed or not. By default we display it while loading the map and initial spaces provided by spaceIds, but you can control this if you load your own data as well. This can be change dynamically as well, see UI controls. Default value: false.
+onReady - optional - is called once the viewer's initial render is done. You may alternatively use the promise returned by startViewer, which resolves when the viewer is ready.
+onError - optional - is called if an error occur while starting the viewer. You may alternatively use the promise returned by startViewer to catch errors.
+onSpaceClick - optional - is called when the user clicks a 3D space, and provide data about which space and which level where clicked.
+hideNavigationButtons - optional - set this to true if you want the user to control the camera but want to remove the navigation buttons. Mouse, touch and keyboard inputs will work while the buttons are hidden. Default value: false
+hideLevelPicker - optional - set this to true if you want to remove the level picker from the viewer. Levels can still be controlled programmatically, so you could use your own buttons or logic. Default value: false
+hideControls - optional - set this to true if you want to remove all control buttons from the viewer. Default value: false
+controlsPosition - optional - lets you choose where the control buttons are rendered. Default value: 'center-right'
+legendPosition - optional - lets you choose where the legend (if any is configured in the data layers) would be rendered. Default value: 'top-left'
+Calling startViewer returns a Promise (MDN docs) which resolves when the viewer is ready. This lets you use Promise.then().catch() or async/await with a try/catch block to react when the viewer is ready, or to handle errors that may occur. It is an alternative to providing onReady and onError callback methods. You may choose the option that suits the most your environment or coding style.
+
+Stop the viewer​
+To stop the viewer, dispose of resources it allocated, and clear the container in which it is rendered back to its original state, call the following function.
+
+map.remove() => void
+Check if the viewer is ready​
+To check if the viewer has finished initializing and is ready for API methods to be called, you can do:
+
+map.isViewerStarted() => boolean
+Picking mode​
+In order to know where a user clicks or taps on the map, you can enable picking mode. For example, this is useful if you have an admin interface to position items or draw on the map. Enabling picking mode is done as follows.
+
+// call this after `onReady` has fired
+map.enablePickingMode({
+  onPick: ({ 
+    coordinates: {
+      lng: number
+      lat: number
+    }
+    event: MapMouseEvent
+  }) => void
+}) => void
+onPick is called each time a click/tap event fires:
+The coordinates object provides the location that was picked. It should be stored in your database and reused anytime you need to display data at this location.
+The event value is the event object fired by Mapbox and is documented here.
+Disabling picking mode is done as follow. For example, you would call disablePickingMode inside the onPick handler if you want to process a single pick event.
+
+map.disablePickingMode() => void
+You may refer to the Add data elements example to see picking mode in action and understand the API. The example uses the space viewer, but the concepts are the same.
+
+Render buildings​
+See the dedicated functions you can call to render buildings on this page.
+
+Data layers​
+The map viewer includes a full SDK to render data layers. Learn more on this page.
+
+Control the map location​
+Focus on a specific space​
+You can change automatically "fly" the map to a specific space, by providing the space's identifier as follow:
+
+map.flyToSpace(spaceId: string, options?: EasingOptions) => void
+spaceId - unique identifier of the space in Smplrspace, something like "spc_xxx".
+options - are camera animation options as per Mapbox's documentation. Search flyTo on that page in case it doesn't navigate to it automatically.
+Fit all spaces in screen​
+You can change automatically "fly" the map to an overview point, showing all rendered spaces, as follow:
+
+map.fitAllSpacesInScreen() => void
+In case their is a single space rendered, this method will be equivalent to calling flyToSpace on that space.
+
+UI controls​
+Change the loading message​
+You can change the loading message any time as follow. This doesn't impact whether the loader is displayed or not.
+
+map.updateLoadingMessage(message: string) => void
+Control the loader​
+You can control whether the loader is displayed or not anytime with the following functions.
+
+map.showLoader() => void
+map.hideLoader() => void
+Full Mapbox SDK​
+The Smplrspace map viewer is built on top of Mapbox GL JS. We provide a number of features dedicated to Smplrspace use-cases, but you can also build anything you want by accessing the full Mapbox SDK as below:
+
+map.mapbox() => mapboxgl.Map | undefined
+The methods below are Smplrspace improved alternatives to the Mapbox ones.
+
+Changing the map style​
+Mapbox provides a setStyle method which works, but we recommend using ours instead so the Smplrspace managed elements automatically adapt to the new style. You should call it as below:
+
+map.setStyle(style: string) => void
+style is a mapbox style url like "mapbox://styles/mapbox/satellite-streets-v12"
+and you can use the below to revert to the default Smplrspace style:
+
+map.setDefaultStyle() => void
+
+Buildings on the map
+One of the main added "layer" the Smplrspace map viewer provides, as compared to just Mapbox is the ability to render 3D spaces from your Smplrspace data, and 3D cities based on OpenStreetMap data in a few lines of code. Here are the functions currently available.
+
+Spaces from Smplrspace​
+List spaces by ID​
+To list the spaces that are currently rendered in the viewer by their IDs (something like "spc_xxx"), call:
+
+map.getCurrentSpaceIds() => string[]
+Add spaces by ID​
+To fetch spaces from your Smplrspace account and render them on the map, call the following method. Note that the spaces need to be georeferenced within the platform.
+
+map.addSpacesById(spaceIds: string[]) => void
+spaceIds - unique identifiers of the spaces in Smplrspace, something like "spc_xxx".
+Remove spaces by ID​
+To remove specific spaces from the map, call this function:
+
+map.removeSpacesById(spaceIds: string[]) => void
+spaceIds - unique identifiers of the spaces in Smplrspace, something like "spc_xxx".
+Remove all spaces​
+To remove all spaces from the map, call this function:
+
+map.removeAllSpaces() => void
+City building data​
+Control 3D cities​
+3D cities are rendered using OSM (OpenStreet Map) data, an open dataset that includes the footprint of many buildings globally. To control whether to render the 3D cities based on OpenStreetMap data or not, use the following methods:
+
+map.showOsmBuildings() => void
+map.hideOsmBuildings() => void
+map.toggleOsmBuildings() => void
+You can also use OSM buildings as a data layer, to render them in colors and make them an interactive part of your data visualization.
+
+Control buildings footprint​
+We can render flat polygons representing the footprint of city buildings on the map. To control whether to render that layer or not, use the following methods:
+
+map.showBuildingsFootprint() => void
+map.hideBuildingsFootprint() => void
+map.toggleBuildingsFootprint() => void
+
+Data layers
+To add or update data layers, you should use the type-specific methods documented in the next sections, while other methods are shared between the layer types and documented further down.
+
+Space data layers​
+Space data layers are layers rendering data with coordinates coming from a Smplrspace space. They're mostly compatible with the space viewer data layers.
+
+Point layer​
+Coming soon — some methods are already present in the API but should not be used.
+
+Polygon layer​
+A polygon layer has each data element rendered as an extruded polygon. It is useful to highlight rooms or specific zones in the buildings.
+
+interface PolygonMapDataLayerDefinition {
+  id: string
+  data: [{
+    id: string
+    spaceId: string
+    coordinates: [{
+      levelIndex: number
+      x: number
+      z: number
+    }] | [[{
+      levelIndex: number
+      x: number
+      z: number
+    }]]
+    ...customData: object
+  }]
+  baseHeight?: number | (dataElement: object) => number
+  height?: number | (dataElement: object) => number
+  color?: string | (dataElement: object) => string
+  // + fields from SharedDefinitionOptions defined further down
+}
+
+map.addPolygonDataLayer(definition: PolygonMapDataLayerDefinition) => void
+map.updatePolygonDataLayer(definitionUpdates: Partial<PolygonMapDataLayerDefinition>) => void
+id is a unique identifier for this layer which is used for updates.
+data is an array of objects (refered to as data elements) to be rendered. Each element must have an id (unique identifier within the data array), a spaceId to transform the local coordinates to global coordinates, and a (local) coordinates array.
+coordinates in its simple form is an array of points in the 2D horizontal space, it can also be an array of "rings" where the first ring is the external perimeter of the polygon, and the others are "holes" cut into the external perimeter.
+customData - optional - elements can also contain any additional custom data used for rendering options.
+baseHeight - optional - defines the elevation from the ground at the base of the polygon in meters. It can be defined as a number for all elements or per element with a function that takes each element as argument and returns the base height for that element. Default value: 0m.
+height - optional - defines the height of the polygon in meters from its base to its top. It can be defined as a number for all elements or per element with a function that takes each element as argument and returns the height for that element. Default value: 3m.
+color - optional - defines the color of the element to render. It can be defined as any valid CSS color string like "orange" or "#3a3c3c", and applied for all elements or per element with a function that takes each element as argument and returns the color string for that element. Default value: "#2393d4"
+SharedDefinitionOptions are defined here.
+Space shell layer​
+A space shell layer renders a space from your account as a colored interactive shell on the map. It's the quickest way to rely on your digitized spaces to create multi-building data visualizations where each building is one data element.
+
+interface SpaceShellMapDataLayerDefinition {
+  id: string
+  // data of type SpaceShellData[]
+  data: [{
+    id: string
+    spaceId: string
+    ...customData: object
+  }]
+  color?: string | ((dataElement: object) => string)
+  // + fields from SharedDefinitionOptions defined further down
+}
+
+map.addSpaceShellDataLayer(definition: SpaceShellMapDataLayerDefinition) => void
+map.updateSpaceShellDataLayer(definitionUpdates: Partial<SpaceShellMapDataLayerDefinition>) => void
+id is a unique identifier for this layer which is used for updates.
+data is an array of objects (refered to as data elements) to be rendered. Each element must have an id (unique identifier within the data array) and a spaceId.
+spaceId is the unique identifier of the space in Smplrspace, something like "spc_xxx".
+customData - optional - elements can also contain any additional custom data used for rendering options.
+color - optional - defines the color of the element to render. It can be defined as any valid CSS color string like "orange" or "#3a3c3c", and applied for all elements or per element with a function that takes each element as argument and returns the color string for that element. Default value: "#2393d4"
+SharedDefinitionOptions are defined here.
+Geospatial data layers​
+Geospatial data layers are layers rendering data with GPS-based coordinates. The data could be created using our entity manager, or any other map provider or geospatial tool.
+
+GeoPoint layer​
+A geopoint layer has each data element rendered as a point or marker on the map. It is useful to highlight various points of interest.
+
+interface GeoPointMapDataLayerDefinition {
+  id: string
+  data: [{
+    id: string
+    position: {
+      lng: number
+      lat: number
+    }
+    ...customData: object
+  }]
+  color?: string | ((dataElement: object) => string)
+  alpha?: number | ((dataElement: object) => number)
+  label?: (dataElement: object) => string
+  // + fields from SharedDefinitionOptions defined further down
+}
+
+map.addGeoPointDataLayer(definition: PointMapDataLayerDefinition) => void
+map.updateGeoPointDataLayer(definitionUpdates: Partial<PointMapDataLayerDefinition>) => void
+id is a unique identifier for this layer which is used for updates.
+data is an array of objects (refered to as data elements) to be rendered. Each element must have an id (unique identifier within the data array) and a position. Elements can also contain any additional custom data used for rendering options.
+color - optional - defines the color of the element to render. It can be defined as any valid CSS color string like "orange" or "#3a3c3c", and applied for all elements or per element with a function that takes each element as argument and returns the color string for that element. Default value: "#2393d4".
+alpha - optional - defines the transparency of the element to render. The value should be between 0 (invisible) and 1 (opaque). It can be defined as a fix value for all elements or per element with a function that takes each element as argument and returns the alpha value for that element. Default value: 1.
+label - optional - allows users to define a text displayed permanently on top of the point rendered on the map. It is a function taking the element as argument and returning the string content to display.
+SharedDefinitionOptions are defined here.
+GeoPolygon layer​
+A geopolygon layer has each data element rendered as a polygon on the map. It is useful to highlight project boundaries, micromarkets, areas under development, etc.
+
+interface GeoPolygonMapDataLayerDefinition {
+  id: string
+  // data of type GeoPolygonData[]
+  data: [{
+    id: string
+    coordinates: [[{
+      lng: number
+      lat: number
+    }]]
+    ...customData: object
+  }]
+  color?: string | ((dataElement: object) => string)
+  alpha?: number | ((dataElement: object) => number)
+  // + fields from SharedDefinitionOptions defined further down
+}
+
+map.addGeoPolygonDataLayer(definition: PolygonMapDataLayerDefinition) => void
+map.updateGeoPolygonDataLayer(definitionUpdates: Partial<PolygonMapDataLayerDefinition>) => void
+id is a unique identifier for this layer which is used for updates.
+data is an array of objects (refered to as data elements) to be rendered. Each element must have an id (unique identifier within the data array) and a coordinates array.
+coordinates is an array of "rings" where the first ring is the external perimeter of the polygon, and the others (optional) rings are "holes" cut into the external perimeter. Ring are made of GPS points.
+customData - optional - elements can also contain any additional custom data used for rendering options.
+color - optional - defines the color of the element to render. It can be defined as any valid CSS color string like "orange" or "#3a3c3c", and applied for all elements or per element with a function that takes each element as argument and returns the color string for that element. Default value: "#2393d4"
+alpha - optional - defines the transparency of the element to render. The value should be between 0 (invisible) and 1 (opaque). It can be defined as a fix value for all elements or per element with a function that takes each element as argument and returns the alpha value for that element. Default value: 1
+SharedDefinitionOptions are defined here.
+OpenStreetMap building layer​
+An OpenStreetMap (OSM) building layer renders data elements as 3D buildings on the map, relying on footprint and height information made available in open access by the OpenStreetMap Foundation. OpenStreetMap is a free, open map database updated and maintained by a community of volunteers via open collaboration.
+
+interface OsmBuildingMapDataLayerDefinition {
+  id: string
+  // data of type OsmBuildingData[]
+  data: [{
+    id: string
+    osmIds: number[]
+    ...customData: object
+  }]
+  color?: string | ((dataElement: object) => string)
+  // + fields from SharedDefinitionOptions defined further down
+}
+
+map.addOsmBuildingDataLayer(definition: OsmBuildingMapDataLayerDefinition) => void
+map.updateOsmBuildingDataLayer(definitionUpdates: Partial<OsmBuildingMapDataLayerDefinition>) => void
+id is a unique identifier for this layer which is used for updates.
+data is an array of objects (refered to as data elements) to be rendered. Each element must have an id (unique identifier within the data array) and a osmIds array.
+osmIds is an array of numbers, each number corresponds to a feature id in the OSM buildings layer (source: "composite" and source-layer: "building" in Mapbox).
+customData - optional - elements can also contain any additional custom data used for rendering options.
+color - optional - defines the color of the element to render. It can be defined as any valid CSS color string like "orange" or "#3a3c3c", and applied for all elements or per element with a function that takes each element as argument and returns the color string for that element. Default value: "#2393d4"
+SharedDefinitionOptions are defined here.
+Note: this layer requires the OSM buildings to be shown in the first place.
+
+Shared definition options​
+Some options correspond to generic behaviours that are shared by all data layers, making it easy to swap between similar layer types (e.g. "point" and "polygon").
+
+// not an actual interface, this is simplified for documentation
+interface SharedDefinitionOptions {
+  tooltip?: (dataElement: object) => string | HTMLString
+  tooltipTemplate?: string
+  tooltipContainerStyle?: string
+  persistentTooltip?: boolean
+  legend?: LegendConfig // see below
+  onClick?: (dataElement: object, event: MapMouseEvent) => void
+  onHover?: (dataElement: object, event: MapMouseEvent) => void
+  onHoverOut?: (dataElement: object, event: MapMouseEvent) => void
+}
+
+type LegendConfig =
+  | {
+    type: 'numeric'
+    colorScale: (n: number | null | undefined) => string
+    domain?: [number, number]
+    ticks?: Record<number, number | string>
+  }
+  | {
+    type: 'swatches'
+    swatches: {
+      color: string
+      label: string
+      group?: string
+    }[]
+  }
+  | {
+    type: 'icons'
+    icons: {
+      url: string
+      label: string
+      group?: string
+    }[]
+  }
+tooltip - optional - is taking the newly hovered data element as argument and should return the content of the tooltip to render. It is called once when the pointer starts to hover a data element. Built-in tooltips support string and "HTML as string" values.
+For string values, newlines are supported by using multi-line template literals.
+For HTML values, both HTML and CSS are supported, the value will be sanitized to prevent XSS attacks.
+If you need complete control over the tooltip content (e.g. for a React component), check the tooltips example.
+tooltipTemplate - optional - is a fully featured template string used to generate the tooltip content based on the data for the hovered element. It is powered by Handlebars with some custom helpers. Read more in this section.
+tooltipContainerStyle - optional - lets you override the style of the tooltip container with inline CSS.
+persistentTooltip - optional - set this to true to turn tooltips into small cards that are all visible at once instead of on hover. Persistent tooltips are automatically positioned on the center of the data element they're attached to (limitation: elevation of the element is not accounted for at the moment). Default value: false
+legend - optional - lets you configure a legend to be rendered automatically in a collapsible overlay on the viewer. The legend can be positioned using legendPosition in viewer options.
+For numeric legends, refer to options in the legend section.
+For swatches legends, refer to options in the legend section.
+For icons legends, refer to options in the legend section.
+onClick - optional - is taking the data element that was clicked as argument, as well as the Mapbox mouse event that triggered the click. It is called each time a click or tap event happens.
+onHover - optional - is taking the newly hovered data element as argument, as well as the Mapbox mouse event that triggered the click. The handler is called once when the pointer starts to hover a data element.
+onHoverOut - optional - is taking the previously hovered data element as argument, as well as the Mapbox mouse event that triggered the click. The handler is called once when the pointer stops hovering a data element.
+You may use the onClick, onHover and onHoverOut handlers to build custom behaviours in your app that respond to interactions happening in the floor plan.
+
+Shared methods​
+Get a data element position on screen​
+This method lets you get the screen position of a data element. This can be useful to implement custom tooltips that you have full programmatic control over.
+
+map.getDataElementPositionOnScreen(layerId: string, elementId: string) => ({
+  screenX: number
+  screenY: number
+}) | null
+layerId is the id field in your layer's definition
+elementId corresponds to the id field used in the data array of your layer
+If an element is found matching layerId and elementId, the function returns its coordinates when projected on screen. When no element is found, the function returns null.
+
+Take good note:
+
+The elevation of the element is not accounted for at the moment, due to limitations in the Mapbox APIs.
+screenX and screenY are not bounded by the viewer itself, so you could have negative values, or values greater that the size of the viewer if the element is present in the 3D scene, but located outside of the current view.
+Remove a layer​
+Removing a data layer completely is done as follow.
+
+map.removeDataLayer(id: string) => void
+id is the identifier of the layer to remove.
+Remove all layers​
+Removing all data layers at once is done as follow.
+
+map.removeAllDataLayers() => void
+
+Custom UX
+Smplr.js provides a few options that help you customize the map experience to your requirements. We're regularly adding new options, so reach out and share what you'd like to do with it.
+
+Adapting the look & feel and experience​
+Render options​
+To customize how the map viewer renders the spaces, you can pass in a number of options to the rendering engine. Below are the options currently exposed. Render options can be updated dynamically as described further.
+
+interface MapSpaceRenderOptions {
+  footprint?: {
+    render?: boolean
+    color?: string
+  }
+  walls?: {
+    render?: boolean
+  }
+  grounds?: {
+    render?: boolean
+  }
+  windows?: {
+    render?: boolean
+  }
+}
+Viewer controls​
+Update render options dynamically​
+Render options are described in details in Render options. You can update them dynamically with the methods below:
+
+map.updateRenderOptions(options: MapSpaceRenderOptions) => void
+map.resetRenderOptionsToDefault() => void
+updateRenderOptions is used to update specific values, while keeping the others unchanged.
+options is an object of the MapSpaceRenderOptions interface, which is deeply merged with the current options used by the viewer. To "unset" an optional value, you can pass undefined explicitely.
+resetRenderOptionsToDefault reverts all values to the Smplrspace defaults.
+Navigate levels​
+To programmatically choose which levels are visible on the map, you may use the following functions:
+
+map.showUpToLevel(levelIndex: number) => void
+levelIndex - zero-based index of the top level you want to see. For example, setting levelIndex to 2 is equivalent to pressing the L3 button in the space viewer.
+You can also reset the viewer back to showing all the levels with:
+
+map.showAllLevels() => void
+Camera controls​
+Get the camera placement​
+map.setCameraPlacement lets you position the camera. You would typically embed the map viewer and have an interface to retrieve one or more placement(s) to be stored in your database. You can then load any placement object from your database to set the initial value. The camera placement can be retrieved with the following function:
+
+map.getCameraPlacement() => ({
+  pitch: number
+  bearing: number
+  zoom: number
+  center: {
+    lng: number
+    lat: number
+  }
+})
+The "placement" is a Javascript object that includes the position and direction of the camera. It is defined as an orbit position (pitch, bearing, zoom) around a center point which the camera points towards. It is fully compatible with the native Mapbox camera values.
+
+pitch is the angle given in degrees of the camera's position in the vertical plane. 0 corresponds to a top down view, while 90 corresponds to a view from the ground.
+bearing is the angle given in degrees of the camera's position in the horizontal plane. 0 faces North, 90 faces East, and -90 or 270 faces West.
+zoom represents the distance to the center point. It has a value between 0 and 22, with 0 showing the whole Earth, and 15 showing buildings.
+center contains the GPS coordinates of the center point in { lat, lng } format.
+Set the camera placement​
+You can move the camera to a specific position and have it target a specific point as well by calling the following function:
+
+map.setCameraPlacement({
+  pitch?: number
+  bearing?: number
+  zoom?: number
+  center?: {
+    lng: number
+    lat: number
+  }
+  animate?: boolean
+  speed?: number
+}) => void
+placement parameters (see description above) are the new desired value. All parameters are optional and the ones that are not provided will keep their current value.
+animate - optional - should be set to false to jump to the new placement and true to animate the camera to the new placement. Default value: false
+speed - optional - defines the speed of the camera animation and should be used with animate set to true. Default value: 1.2
+Zoom in/out​
+This is the programmatic equivalent to pressing the zoom buttons:
+
+map.zoomIn() => void
+map.zoomOut() => void
+
+Embedding the editor
+Smplr.js makes a smplr object available on the global scope. One of the classes provided under this object is the Editor class. It provides the API necessary to embed the Smplrspace editor into your app and manage 3rd-party authenticated sessions to edit a space. By 3rd-party authenticated, we mean that you authenticate and identify the users, not us.
+
+Constructor​
+To create an Editor instance, initialise it as follow.
+
+const editor = new smplr.Editor({
+  spaceId: string
+  user: {
+    id: string
+    name?: string
+    picture?: string
+  }
+  clientToken: string
+  containerId?: string
+  container?: HTMLElement
+  disableErrorReporting?: boolean
+  whiteLabel?: boolean
+}) => Editor
+spaceId is the unique identifier of the space in Smplrspace, something like "spc_xxx". Refer to the page on SIDs to learn more.
+user is an object used to identify who is making the changes on the space.
+id is a required unique identifier for the user. It does not represent anything on the Smplrspace side, it should most likely be your own internal id. It is used to track who made the changes.
+name is an optional user-readable name for the user. The value is used in the Smplrspace app to indicate who made the changes. If you decide not to indicate the name, the app will indicate that "Someone" made the changes. This is purely an optional to improve your team's user experience of the Smplrspace app.
+picture is an optional URL used as the avatar of the person who made changes in the app. If you decide not to provide a picture, the avatar will not be displayed in the app. This is purely an optional to improve your team's user experience of the Smplrspace app.
+clientToken is an API token that is used to authenticate client-side requests. It is safe to have it exposed in your client code. You can manage your organisation's tokens in the Smplrspace app, by heading to the Developers page from the main menu. More info.
+containerId is the "id" of the html "div" container where smplr.js should render the editor, something like "smplr-container" that can be found in your html. Only ids are supported, not classes.
+container is an alternative to containerId that lets you provide the HTML element directly instead of an id.
+disableErrorReporting - optional - can be set to "true" to disable the automated reporting of errors to our 3rd party error tracking tool, Sentry. We have discovered that Sentry's instrumentation could make it seem as if all network requests originated from smplr.js. Unfortunately, there is nothing simple we can do on our side to avoid that. If this is an issue for you, you can disable Sentry altogether. The tradeoff is that we will not automatically detect errors hapenning in your integration, and you may need to be more proactive to report them for us to roll out fixes.
+whiteLabel - optional - can be set to "true" to remove the "Powered by Smplrspace" attribution from the editor. This is a paid add-on. You can check if it is enabled from the Organization settings page. Get in touch to learn more. Note: there is currently no attribution in the editor, but there might be in the future.
+See also the live example.
+
+Editor sessions​
+Start a session​
+To initiate an editor session, use the following code.
+
+editor.startSession({
+  loadingMessage?: string
+  onReady?: () => void
+  onError?: (errorMessage: string) => void
+}) => void
+loadingMessage - optional - lets you override the text displayed while the space is loading. Default value: "Loading the editor".
+onReady - optional - is called once the editor has successfully initialized.
+onError - optional - is called if an error occur while starting the editor.
+End a session​
+To stop the session, dispose of resources it allocated, and clear the container in which it is rendered back to its original state, call the following function.
+
+editor.remove() => void
+
+Querying your data
+Smplr.js provides a smplr object. One of the classes provided under this object is QueryClient, which exposes capabilities generally related to the extraction of information out of your floor plans and spatial data. Here are a few examples:
+
+call selected backend API endpoints allowing programmatic queries to retrieve or mutate your Smplrspace hosted data,
+extract furniture (equipment) listings or information from the floor plans,
+compute distances, areas, and the like from mapped data,
+compute centers, bounding boxes, concave hulls,
+ask if a point or a piece of furniture is located within a given boundary,
+and we're adding queries based on demand, so get in touch and share your use-case.
+Most queries are typed end-to-end, reducing runtime errors and improving developer experience with auto-completion.
+
+Constructor​
+To create a QueryClient instance, initialise it as follow.
+
+const smplrClient = new smplr.QueryClient({
+  organizationId: string
+  clientToken: string
+});
+organizationId is the unique identifier of your organization in Smplrspace, something like "fbc5617e-5a27-4138-851e-839446121b2e". Personal accounts are also treated as "personal organization". To get your organization's ID, head to the Developers page from the main menu.
+clientToken is an API token that is used to authenticate client-side requests. It is safe to have it exposed in your client code. You can manage your organisation's tokens in the Smplrspace app, by heading to the Developers page from the main menu. More info.
+How to use it​
+Some queries exposed via QueryClient are synchronous, while others return a Promise (MDN docs) to the resulting data, and throw structured errors if any. You can consume such queries and handle errors as per your preference using Promise.then().catch() or async/await with a try/catch block.
+
+We also provide a synchronous version for most asynchronous queries, relying on the caching of the space information fetched from the API. So, e.g., if you need to get the location of a bunch of furniture pieces, you can call getSpace once and then map over furniture synchronously to extract the location with getFurnitureByIdFromCache.
+
+Using async/await​
+const smplrClient = new smplr.QueryClient({
+  organizationId: "xxx",
+  clientToken: "pub_xxx",
+});
+
+try {
+  const space = await smplrClient.getSpace("spc_xxx");
+  // do something with the data
+} catch (error) {
+  // handle the error
+}
+Using Promise.then​
+const smplrClient = new smplr.QueryClient({
+  organizationId: "xxx",
+  clientToken: "pub_xxx",
+});
+
+smplrClient
+  .getSpace("spc_xxx")
+  .then((space) => {
+    // do something with the data
+  })
+  .catch((error) => {
+    // handle the error
+  });
+Queries​
+The query client is pretty recent and will fast evolving based on user requests. Below are the type of queries currently supported. Get more details in the dedicated page.
+
+Utility queries: check the connection and version of the API.
+Spaces queries: retrieve details about your spaces.
+Furniture (equipment) queries: extract furniture from your spaces.
+Geometry queries: compute dimensions and perform geometrical simplifications of your data.
+Get in touch with any use-case that would require new queries to be exposed.
+Spaces
+createSpace​
+To create a space programmatically, you can call the following query.
+
+smplrClient.createSpace({ 
+  name: string
+  notes?: string 
+}): Promise<{ sid: string }>
+With sid the Smplrspace ID of the space.
+
+name is the name of the space to create.
+notes - optional - are internal team notes attached to the space.
+setSpaceStatus​
+You can call the following query to programmatically publish, set as draft, or archive a space.
+
+smplrClient.setSpaceStatus({ 
+  spaceId: string; 
+  status: 'published' | 'draft' | 'archived' 
+}): Promise<{ status: string }>
+spaceId - unique identifier of the space in Smplrspace, something like "spc_xxx". Refer to the page on SIDs to learn more.
+status - one of the possible statuses, with "published" corresponding to "live" in the platform.
+deleteSpace​
+You can call the following query to programmatically delete a space.
+
+smplrClient.deleteSpace(spaceId: string): Promise<void>
+spaceId - unique identifier of the space in Smplrspace, something like "spc_xxx". Refer to the page on SIDs to learn more.
+listSpaces​
+To list all the spaces on your organization account, you can call the following query.
+
+smplrClient.listSpaces(): Promise<{
+  sid: string
+  deprecated_id: string
+  name: string
+  created_at: string
+  status: string
+}[]>
+You can learn more about sid and deprecated_id in the dedicated page on SIDs.
+
+getSpace​
+To get all details about a space, you can call the following query.
+
+smplrClient.getSpace(spaceId: string, options?: { useCache?: boolean }): Promise<{
+  sid: string // spaceId
+  created_at: string
+  modified_at: string
+  name: string
+  public_link_enabled: boolean
+  status: 'draft' | 'published' | 'archived'
+  definition: object | null
+  embed_image: string | null
+  short_code: string | null
+  assetmap: object | null
+}>
+spaceId - unique identifier of the space in Smplrspace, something like "spc_xxx". Refer to the page on SIDs to learn more.
+options - optional - as described below.
+options.useCache - optional - set this to control whether the request should use the client's local cache. Default value: false
+getSpaceFromCache​
+This is the synchronous equivalent of the query right above.
+
+smplrClient.getSpaceFromCache(spaceId: string): Space
+where spaceId and Space are as defined in getSpace, without the Promise.
+
+getSpaceAssetmap (entities)​
+info
+"Assets" are gradually being renamed to "Entities". You'll read entity/ies is the app and asset(s) here, until the change is complete. They are one and the same concept. Except this API to be deprecated soon, and a much wider API surface to be introduced as the entity manager enters general availability.
+
+To get the full assetmap (list of entities) of a space, as saved in the entity manager (previously mapper) in the app, you can call the following query.
+
+smplrClient.getSpaceAssetmap(spaceId: string): Promise<unknown>
+spaceId - unique identifier of the space in Smplrspace, something like "spc_xxx".
+Note that this query is currently not typed as the entity manager (previously mapper) is still in private beta. You should expect an array of "entity groups" (previously asset groups), each "entity group" being an object. The return value corresponds to the JSON export from the entity manager (previously mapper) in the app.
+
+getSpaceAssetmapFromCache​
+This is the synchronous equivalent of the query right above.
+
+smplrClient.getSpaceAssetmapFromCache(spaceId: string): unknown
+where spaceId and the return value are as defined in getSpaceAssetmap.
+
+Need any other data?​
+Get in touch with any use-case that would require new queries to be exposed.
+Levels & rooms
+getLevelBoundingBox​
+To get the bounding box of the entire floor plate of a space, you can call the following query. The bounding box is defined as a polygon which is always straight with respect to the (x, z) axes.
+
+smplrClient.getLevelBoundingBox({
+  spaceId: string
+  levelIndex: number
+  padding?: number
+}): Promise<{
+  levelIndex: number
+  x: number
+  z: number
+}[]>
+spaceId - unique identifier of the space in Smplrspace, something like "spc_xxx".
+levelIndex - zero-based index of the level. Refer to the Furniture interface to learn more.
+padding - optional - minimum space between the floor plate's grounds/walls and the bounding box in meters. Default value: 0
+getLevelBoundingBoxFromCache​
+This is the synchronous equivalent of the query right above.
+
+smplrClient.getLevelBoundingBoxFromCache({
+  spaceId: string
+  levelIndex: number
+  padding?: number
+}): {
+  levelIndex: number
+  x: number
+  z: number
+}[]
+where spaceId, levelIndex, and padding are as defined in getLevelBoundingBox.
+
+getLevelAutomaticGround​
+To get the automatic ground of the entire floor plate of a space, you can call the following query. The automatic ground is the continuous concave hull of all the walls of the level put together. It may be enabled or disabled in the editor, but the value here will return a valid hull if the level exists and has walls.
+
+smplrClient.getLevelAutomaticGround({
+  spaceId: string
+  levelIndex: number
+}): Promise<{
+  levelIndex: number
+  x: number
+  z: number
+}[] | null>
+spaceId - unique identifier of the space in Smplrspace, something like "spc_xxx".
+levelIndex - zero-based index of the level. Refer to the Furniture interface to learn more.
+getLevelAutomaticGroundFromCache​
+This is the synchronous equivalent of the query right above.
+
+smplrClient.getLevelAutomaticGroundFromCache({
+  spaceId: string
+  levelIndex: number
+}): {
+  levelIndex: number
+  x: number
+  z: number
+}[] | null
+where spaceId, and levelIndex are as defined in getLevelAutomaticGround.
+
+getRoomsOnLevel​
+Rooms are automatically extracted closed polygons formed by the walls of a floor plan. To get the automatic rooms of the entire floor plate of a space, you can call the following query.
+
+smplrClient.getRoomsOnLevel({
+  spaceId: string
+  levelIndex: number
+  useCache?: boolean
+}): Promise<{
+  room: {
+    levelIndex: number
+    x: number
+    z: number
+  }[]
+  holes: {
+    levelIndex: number
+    x: number
+    z: number
+  }[][]
+  coordinates: {
+    levelIndex: number
+    x: number
+    z: number
+  }[][]
+}[] | null>
+spaceId - unique identifier of the space in Smplrspace, something like "spc_xxx".
+levelIndex - zero-based index of the level. Refer to the Furniture interface to learn more.
+useCache - optional - set this to control whether the request should use the client's local cache of computed automatic rooms. You can call this query with useCache set to false to refresh the cache for all automatic rooms related queries. Default value: true
+getRoomsOnLevelFromCache​
+This is the synchronous equivalent of the query right above.
+
+smplrClient.getRoomsOnLevelFromCache({
+  spaceId: string
+  levelIndex: number
+}): {
+  levelIndex: number
+  x: number
+  z: number
+}[] | null
+where spaceId, and levelIndex are as defined in getRoomsOnLevel.
+
+getRoomAtPoint​
+Building on the automatic rooms described in getRoomsOnLevel, you can also request for the room located at a specific location.
+
+smplrClient.getRoomAtPoint({
+  spaceId: string
+  point: {
+    levelIndex: number
+    x: number
+    z: number
+  }
+}): Promise<{
+  room: {
+    levelIndex: number
+    x: number
+    z: number
+  }[]
+  holes: {
+    levelIndex: number
+    x: number
+    z: number
+  }[][]
+  coordinates: {
+    levelIndex: number
+    x: number
+    z: number
+  }[][]
+}[] | null>
+spaceId - unique identifier of the space in Smplrspace, something like "spc_xxx".
+point - the point coordinates in 2D, with the same schema as polygon below.
+getRoomAtPointFromCache​
+This is the synchronous equivalent of the query right above.
+
+smplrClient.getRoomAtPointFromCache({
+  spaceId: string
+  point: {
+    levelIndex: number
+    x: number
+    z: number
+  }
+}): {
+  room: {
+    levelIndex: number
+    x: number
+    z: number
+  }[]
+  holes: {
+    levelIndex: number
+    x: number
+    z: number
+  }[][]
+  coordinates: {
+    levelIndex: number
+    x: number
+    z: number
+  }[][]
+}[] | null
+where spaceId, and point are as defined in getRoomAtPoint.
+Doors & windows
+Opening interface​
+Doors and windows are the same thing under the hood in Smplrspace, we call them wall "openings". Multiple queries in this page return objects of the type Opening described below:
+
+interface Opening {
+  id: string
+  name: string
+  dimensions: {
+    width: number
+    height: number
+    baseHeight: number
+  }
+  options: object
+  coordinates: {
+    levelIndex: number
+    x: number
+    z: number
+    elevation: number
+  }[]
+}
+id - unique identifier of this particular opening.
+name - name given to the opening in the editor. It could be an empty string.
+dimensions.width - horizontal width of the opening in centimeters.
+dimensions.baseHeight - distance between the ground and the bottom of the opening. It is usually 0 for doors and positive for windows.
+dimensions.height - distance between the bottom and the top of the opening.
+options - contains all sorts of options selected in the editor and used to render the opening.
+getAllDoorsInSpace​
+To list all doors from a space, you can call the following query.
+
+smplrClient.getAllDoorsInSpace(spaceId: string): Promise<Opening[]>
+spaceId - unique identifier of the space in Smplrspace, something like "spc_xxx".
+Opening - this main interface is described here.
+getAllDoorsInSpaceFromCache​
+This is the synchronous equivalent of the query right above.
+
+smplrClient.getAllDoorsInSpaceFromCache(spaceId: string): Opening[]
+where spaceId and Opening are as defined in getAllDoorsInSpace.
+
+getDoorsOnLevel​
+To list all doors from a single level in a space, you can call the following query.
+
+smplrClient.getDoorsOnLevel({
+  spaceId: string
+  levelIndex: number
+}): Promise<Opening[]>
+spaceId - unique identifier of the space in Smplrspace, something like "spc_xxx".
+levelIndex - zero-based index of the level. Refer to the Opening interface to learn more.
+Opening - this main interface is described here.
+getDoorsOnLevelFromCache​
+This is the synchronous equivalent of the query right above.
+
+smplrClient.getDoorsOnLevelFromCache({
+  spaceId: string
+  levelIndex: number
+}): Opening[]
+where spaceId, levelIndex, and Opening are as defined in getDoorsOnLevel.
+
+getAllWindowsInSpace​
+To list all windows from a space, you can call the following query.
+
+smplrClient.getAllWindowsInSpace(spaceId: string): Promise<Opening[]>
+spaceId - unique identifier of the space in Smplrspace, something like "spc_xxx".
+Opening - this main interface is described here.
+getAllWindowsInSpaceFromCache​
+This is the synchronous equivalent of the query right above.
+
+smplrClient.getAllWindowsInSpaceFromCache(spaceId: string): Opening[]
+where spaceId and Opening are as defined in getAllWindowsInSpace.
+
+getWindowsOnLevel​
+To list all windows from a single level in a space, you can call the following query.
+
+smplrClient.getWindowsOnLevel({
+  spaceId: string
+  levelIndex: number
+}): Promise<Opening[]>
+spaceId - unique identifier of the space in Smplrspace, something like "spc_xxx".
+levelIndex - zero-based index of the level. Refer to the Opening interface to learn more.
+Opening - this main interface is described here.
+getWindowsOnLevelFromCache​
+This is the synchronous equivalent of the query right above.
+
+smplrClient.getWindowsOnLevelFromCache({
+  spaceId: string
+  levelIndex: number
+}): Opening[]
+where spaceId, levelIndex, and Opening are as defined in getDoorsOnLevel.
+
+Need any other data?​
+Get in touch with any use-case that would require new queries to be exposed.
+Furniture
+info
+"Furniture" is gradually being renamed to "Equipment". You'll read equipment is the app and furniture here, until the change is complete. They are one and the same concept.
+
+Furniture interface​
+Multiple queries in this page return objects of the type Furniture described below:
+
+interface Furniture {
+  catalogId: string
+  id: string
+  name: string
+  levelIndex: number
+  position: {
+    x: number
+    z: number
+    elevation: number
+  }
+  rotation: Partial<{
+    pitch: number
+    yaw: number
+    roll: number
+  }>
+  dimensions: Partial<{
+    length: number
+    height: number
+    width: number
+  }>
+  configuration?: object
+}
+catalogId - unique identifier of the furniture model, internal to Smplrspace. For example, all desks will share their catalogId.
+id - unique identifier of this particular piece of furniture, in that space.
+name - name given to the furniture in the editor.
+levelIndex - zero-based index of the level where the furniture is located. For example, levelIndex equals to 2 means the furniture is on L3 if there are no basements.
+position - location of the center of the furniture in the floor plan. Values are given in meter. The absolute value has no meaning since the coordinate (0,0,0) is arbitrary. So these values are only relevant relatively to each other.
+rotation - angle of rotation of the furniture in degrees. yaw would typically be the only non-null value as it represents the rotation around the vertical axis.
+dimensions - size of the furniture in centimeters. length and width are the dimensions in the 2D horizontal plane, while height is the vertical height in the 3D space.
+configuration - only exists for parametric furniture models, and contains the values of all model options for that piece of furniture. The schema depends on the model.
+getAllFurnitureInSpace​
+To list all furniture from a space, you can call the following query.
+
+smplrClient.getAllFurnitureInSpace(spaceId: string): Promise<Furniture[]>
+spaceId - unique identifier of the space in Smplrspace, something like "spc_xxx".
+Furniture - this main interface is described here.
+getAllFurnitureInSpaceFromCache​
+This is the synchronous equivalent of the query right above.
+
+smplrClient.getAllFurnitureInSpaceFromCache(spaceId: string): Furniture[]
+where spaceId and Furniture are as defined in getAllFurnitureInSpace.
+
+getFurnitureOnLevel​
+To list all furniture from a single level in a space, you can call the following query.
+
+smplrClient.getFurnitureOnLevel({
+  spaceId: string
+  levelIndex: number
+}): Promise<Furniture[]>
+spaceId - unique identifier of the space in Smplrspace, something like "spc_xxx".
+levelIndex - zero-based index of the level. Refer to the Furniture interface to learn more.
+Furniture - this main interface is described here.
+getFurnitureOnLevelFromCache​
+This is the synchronous equivalent of the query right above.
+
+smplrClient.getFurnitureOnLevelFromCache({
+  spaceId: string
+  levelIndex: number
+}): Furniture[]
+where spaceId, levelIndex, and Furniture are as defined in getFurnitureOnLevel.
+
+getFurnitureInPolygon​
+To list all furniture contained within an area defined by a polygon, you can call the following query.
+
+smplrClient.getFurnitureInPolygon({
+  spaceId: string
+  polygon: {
+    levelIndex: number
+    x: number
+    z: number
+  }[]
+}): Promise<Furniture[]>
+spaceId - unique identifier of the space in Smplrspace, something like "spc_xxx".
+polygon - the definition of the area used as a mask to extract furniture. It has the same schema as the coordinates from the polygon data layers. It is assumed here that all coordinates have the same levelIndex value.
+Furniture - this main interface is described here.
+getFurnitureInPolygonFromCache​
+This is the synchronous equivalent of the query right above.
+
+smplrClient.getFurnitureInPolygonFromCache({
+  spaceId: string
+  polygon: {
+    levelIndex: number
+    x: number
+    z: number
+  }[]
+}): Furniture[]
+where spaceId, polygon, and Furniture are as defined in getFurnitureInPolygon.
+
+getFurnitureById​
+To extract a single piece of furniture from a space, identified by its unique identifier, you can call the following query.
+
+smplrClient.getFurnitureById({
+  spaceId: string
+  furnitureId: string
+}): Promise<Furniture | null>
+spaceId - unique identifier of the space in Smplrspace, something like "spc_xxx".
+furnitureId - unique identifier of the furniture in the space, something like "fbc5617e-5a27-4138-851e-839446121b2e".
+Furniture - this main interface is described here.
+Returns null if the furniture is not found in the space.
+
+getFurnitureByIdFromCache​
+This is the synchronous equivalent of the query right above.
+
+smplrClient.getFurnitureByIdFromCache({
+  spaceId: string
+  furnitureId: string
+}): Furniture | null
+where spaceId, furnitureId, and Furniture are as defined in getFurnitureById.
+
+getFurnitureGroundFootprintById​
+To get the ground footprint (as a polygon) of a single piece of furniture, identified by its unique identifier, you can call the following query.
+
+smplrClient.getFurnitureGroundFootprintById({
+  spaceId: string
+  furnitureId: string
+  closed?: boolean
+}): Promise<{
+  levelIndex: number
+  x: number
+  z: number
+}[] | null>
+spaceId - unique identifier of the space in Smplrspace, something like "spc_xxx".
+furnitureId - unique identifier of the furniture in the space, something like "fbc5617e-5a27-4138-851e-839446121b2e".
+closed - optional - indicates whether the returned array should be "closed", i.e. the last element repeats the first element. Default value: false.
+Returns null if the furniture is not found in the space.
+
+getFurnitureGroundFootprintByIdFromCache​
+This is the synchronous equivalent of the query right above.
+
+smplrClient.getFurnitureGroundFootprintByIdFromCache({
+  spaceId: string
+  furnitureId: string
+  closed?: boolean
+}): {
+  levelIndex: number
+  x: number
+  z: number
+}[] | null
+where spaceId, furnitureId, and closed are as defined in getFurnitureGroundFootprintById.
+
+isFurnitureInPolygon​
+To know whether a piece of furniture is contained within an area defined by a polygon, you can call the following query.
+
+smplrClient.isFurnitureInPolygon({
+  spaceId: string
+  furnitureId: string
+  polygon: {
+    levelIndex: number
+    x: number
+    z: number
+  }[]
+}): Promise<boolean | null>
+spaceId - unique identifier of the space in Smplrspace, something like "spc_xxx".
+furnitureId - unique identifier of the furniture in the space, something like "fbc5617e-5a27-4138-851e-839446121b2e".
+polygon - the definition of the area used as a mask to extract furniture. It has the same schema as the coordinates from the polygon data layers. It is assumed here that all coordinates have the same levelIndex value.
+Returns null if the furniture is not found in the space, false if it is found but not in the polygon, true if it is found in the polygon.
+
+A similar query is available for points, see isPointInPolygon.
+
+isFurnitureInPolygonFromCache​
+This is the synchronous equivalent of the query right above.
+
+smplrClient.isFurnitureInPolygonFromCache({
+  spaceId: string
+  furnitureId: string
+  polygon: {
+    levelIndex: number
+    x: number
+    z: number
+  }[]
+}): boolean | null
+where spaceId, furnitureId, and polygon are as defined in isFurnitureInPolygon.
+Geometry
+getPolylineLength​
+To measure the length of a line or polyline, you can call the following query.
+
+smplrClient.getPolylineLength({
+  line: {
+    levelIndex: number
+    x: number
+    z: number
+    elevation: number
+  }[]
+  unit?: 'ft' | 'm' | 'cm' | 'mm'
+}): number
+line - the polyline you want to compute the length for. It has the same schema as the coordinates from the polyline data layers.
+unit - optional - your unit of choice. Default value: m
+getPolygonArea​
+To measure the area of a polygon, you can call the following query.
+
+smplrClient.getPolygonArea({
+  polygon: {
+    levelIndex: number
+    x: number
+    z: number
+  }[]
+  unit?: 'sqft' | 'sqm'
+}): number
+polygon - the polygon you want to compute the length for. It has the same schema as the coordinates from the polygon data layers.
+unit - optional - your unit of choice. Default value: sqm
+getPolygonCenter​
+To get the center point of a polygon, you can call the following query.
+
+smplrClient.getPolygonCenter({
+  polygon: {
+    levelIndex: number
+    x: number
+    z: number
+  }[]
+}): {
+  levelIndex: number
+  x: number
+  z: number
+}
+polygon - the polygon you want to get the center for. It has the same schema as the coordinates from the polygon data layers.
+getPointsBoundingBox​
+To get the bounding box of a set of points, you can call the following query. The bounding box is defined as a polygon which is always straight with respect to the (x, z) axes.
+
+smplrClient.getPointsBoundingBox({
+  points: {
+    levelIndex: number
+    x: number
+    z: number
+  }[]
+  padding?: number
+}): {
+  levelIndex: number
+  x: number
+  z: number
+}[]
+points - the array of points you want to compute the bounding box for.
+padding - optional - minimum space between the points and the bounding box in meters. Default value: 0
+getPointsConcaveHull​
+The concave hull of a set of points is the smallest polygon that contains all the points, similar to a contour. To get the concave hull of a set of points, you can call the following query.
+
+Note that concave hulls are not suitable for sparse points, and you should use a convex hull instead – get in touch if you need this.
+
+Similarly, walls (or any data represented by lines or polygons) are typically not suitable for pure concave hulls — we have a dedicated query for such data with getLinesConcaveHull below.
+
+smplrClient.getPointsConcaveHull({
+  points: {
+    levelIndex: number
+    x: number
+    z: number
+  }[]
+  simplify?: boolean
+  simplifyTolerance?: number
+}): {
+  levelIndex: number
+  x: number
+  z: number
+}[]
+points - the array of points you want to compute the bounding box for.
+simplify - optional - whether the returned hull should be simplified, which means consecutive points that are aligned will be removed to keep only the first and the last. Default value: true
+simplifyTolerance - optional - authorized distance from the alignment used during the simplification process, given in meters. Default value: 0.005
+getLinesConcaveHull​
+The concave hull of a set of lines is the smallest polygon that contains all the lines without "breaking" any of them, which makes it more suitable for "continuous" data (like walls) than the pure concave hulls computed in getPointsConcaveHull. It is similar to a contour. To get the concave hull of a set of lines, you can call the following query.
+
+smplrClient.getLinesConcaveHull({
+  lines: {
+    levelIndex: number
+    x: number
+    z: number
+  }[][]
+  simplify?: boolean
+  simplifyTolerance?: number
+}): {
+  levelIndex: number
+  x: number
+  z: number
+}[]
+lines - the array of lines you want to compute the bounding box for.
+simplify - optional - whether the returned hull should be simplified, which means consecutive points that are aligned will be removed to keep only the first and the last. Default value: true
+simplifyTolerance - optional - authorized distance from the alignment used during the simplification process, given in meters. Default value: 0.005
+isPointInPolygon​
+To know whether a point is contained within an area defined by a polygon, you can call the following query.
+
+smplrClient.isPointInPolygon({
+  point: {
+    levelIndex: number
+    x: number
+    z: number
+  }
+  polygon: {
+    levelIndex: number
+    x: number
+    z: number
+  }[]
+}): boolean
+point - the point coordinates in 2D, with the same schema as polygon below.
+polygon - the polygon in which the point should be located or not. It has the same schema as the coordinates from the polygon data layers. It is assumed here that all coordinates have the same levelIndex value.
+A similar query is available for furniture pieces, see isFurnitureInPolygon.
+orking with colors on floor plans
+One of the core usage for Smplrspace is data visualization. As such, good utilization of color theory is an advantage to create a great user experience. With the Color class, we wrap the knowledge we collected through years of building visualizations to help you get going quickly.
+
+A little context​
+A fundamental in our approach, not with visualization at large, but specifically with visualization on a floor plan, is that you're doing spatial data visualization. This opens the door to bringing in knowledge from the well researched areas of cartography and geospatial data visualization. One of the most respected names in the industry is Dr. Cynthia Brewer, American cartographer, who studied the psychological perception of colors used in infographics on maps, and more specifically on choropleth maps. Her online tool, ColorBrewer is where we extracted the great majority of the color scales we suggest here.
+
+Another aspect of color utilization with Smplrspace, is that you're manipulating colors in Javascript. Having at hand tools that let you programmatically manipulate colors easily, and in a way that is aligned with common data visualization patterns, is a strong advantage. We highly recommend using chroma.js by Gregor Aisch (homepage), a former graphics editor at The New York Times (work) and co-founder of Datawrapper, an online tool to create charts, maps, and tables. Chroma.js is the underlying color utility used in the Smplrspace codebase and our color scales come loaded with options powered directly by the library.
+
+Color tools we provide​
+Scales and legend​
+The Color class in smplr.js provides a few color tools to help you get going quickly. The main part is color scales. We provide numerical scales based of ColorBrewer, including sequential single hue, sequential multi-hue, and diverging scales. We also provide a categorical scale that helps you quickly map categories to colors, and a RAG (red/amber/green) scale.
+
+We also have a Legend component suitable for numerical scale, which works with our scales and your custom scales as well. This component is available for React, as well as vanilla Javascript.
+
+Color mapping​
+Finally, as the Smplrspace viewer is a 3D scene, colors are affected by a number of parameters like lighting, materials, shadows, etc. So colors in the viewer do not behave like clean CSS colors. You can actually see how a single sphere does not have the same color on its whole surface.
+
+sphere color
+
+To make colors more predictable, we provide two utility methods to convert colors between their CSS value and their approximate perceived value in the viewer. As explained, their is no clear one to one mapping, but we generally found that this works quite well. You could for example use this to render a custom legend for categorical scales.
+
+
+Color scales
+Numerical scales​
+numericScale​
+This function lets you quickly create scales that map numerical values to colors, and comes with a number of best practice scales, as well as options to customize them.
+
+smplr.Color.numericScale({
+  name: NumericScale | string
+  domain?: [number, number]
+  invert?: boolean
+  padding?: number | [number, number]
+  gamma?: number
+  brighten?: number
+  saturate?: number
+  nodata?: string
+  classes?: number | number[]
+  zeroAsNoData?: boolean
+}) => ((n: number | null | undefined) => string)
+
+// example
+smplr.Color.numericScale({
+  name: smplr.Color.NumericScale.RdYlBu,
+  domain: [10, 30],
+  invert: true,
+})
+name is the identifier of the scale. See below for the list of available scales. You can either pass it as a string - 'OrRd', or using our provided enum for typesafety and autocompletion - smplr.Color.NumericScale.OrRd.
+domain - optional - is typically the range of values that will be passed to the scale. It is an array of 2 numbers, where the first number is mapped to the start of the scale, and the second number is mapped to the end of the scale. Values lower than the domain will be mapped to the start of the scale, and values higher to the end. Default value: [0,1].
+invert - optional - is a boolean used to invert the scale, or swap its start and end. Default value: false.
+padding - optional - reduces the color range by cutting off a fraction of the scale. A single number applies the same padding to both ends, while an array lets you pad differently on the start and the end of the scale. Negative values can be used to compress the scale and extend its extreme values. Default value: 0.
+gamma - optional - is used to "shift" a scale's center more the the beginning (gamma < 1) or end (gamma > 1). Default value: 1.
+brighten - optional - is used to change the lightness of the scale. Positive values brightens it, while negative values darkens it. Default value: 0.
+saturate - optional - is used to change the saturation of the scale. Positive values saturates it, while negative values desaturates it. Default value: 0.
+nodata - optional - is the color used when the value passed to the scale is not valid. Default value: #6a6c6c.
+classes - optional - is used to return a distinct set of colors instead of a continuous scale. A number generates a scale broken into equi-distant classes, while an array lets you choose the "breakpoints" to use for the classes.
+zeroAsNoData - optional - should be set to true if you want to consider the value 0 as missing data, thus rendering it using the nodata color. Default value: false.
+The scales available are:
+
+single hue sequential scales: Oranges, Reds, Greens, Purples, Greys, Blues - from ColorBrewer.
+multi-hue sequential scales: OrRd, PuBu, BuPu, BuGn, YlOrBr, YlGn, RdPu, YlGnBu, GnBu, YlOrRd, PuRd, PuBuGn – from ColorBrewer, and Viridis initially from Matplotlib.
+diverging scales: Spectral, RdYlGn, RdBu, PiYG, PRGn, RdYlBu, BrBG, RdGy, PuOr - from ColorBrewer.
+The air quality example uses numericScale and can be used as a code playground to test out the options. You can also chose and configure a color scale using our colors playground.
+
+tip
+Configure a numerical scale using our interactive colors playground
+
+Categorical scales​
+categoryScale​
+This function lets you quickly map a discrete number of named categories to colors. It comes with fallback color built-in, as well as type safe categories.
+
+smplr.Color.categoryScale<C extends string>({
+  categories: Record<C, string>
+  nodata?: string
+}): ((category: C) => string)
+
+// example
+smplr.Color.categoryScale({
+  categories: {
+    sunny: 'yellow',
+    rainy: 'blue',
+    cloudy: 'grey'
+  },
+})
+categories is an object matching category names to colors.
+nodata - optional - is the color used when the value passed to the scale is not a known category. Default value: #6a6c6c.
+Typescript tip: You may disable category typesafety by passing a "loose" type hint to the function: categoryScale<string>({...}).
+
+Easy swatches for your legend​
+When using a category scale, you can use the same arguments provided to create the scale to generate the corresponding swatches. This makes it easy to use a legend for the scale.
+
+smplr.Color.categorySwatches<C extends string>({
+  // same as categoryScale
+  categories: Record<C, string>
+  nodata?: string
+  // additional swatches config
+  excludeNoData?: boolean
+  noDataLabel?: string
+}): {
+  color: string
+  label: string
+}[]
+categories and nodata - refer to categoryScale above.
+excludeNoData - optional - lets you opt out of having a swatch for the nodata color. Default value: false.
+noDataLabel - optional - lets you customize the label used for the nodata color. Default value: 'No data'.
+ragScale​
+This function is built on top of categoryScale and provide a shortcut for red/amber/green scenarios. Here, the scale comes with pre-defined and optimized RAG colors, that can be customized. And the values "red", "amber", and "green" are always valid for quick testing.
+
+smplr.Color.ragScale<C extends string | 'red' | 'amber' | 'green'>({
+  categories?: Partial<Record<'red' | 'amber' | 'green', C>>
+  colors?: {
+    red?: string
+    amber?: string
+    green?: string
+  }
+  nodata?: string
+}): ((category: C) => string)
+
+// example
+smplr.Color.ragScale({
+  categories: {
+    red: 'vacant',
+    amber: 'expiring',
+    green: 'occupied',
+  },
+})
+categories - optional - is an object matching category names to the RAG classes. Default value: { red: 'red', amber: 'amber', green: 'green' }.
+colors - optional - is an object used to provide custom RAG colors. Default value: { red: '#ff3f34', amber: '#c77a15', green: '#3aa655' }.
+nodata - optional - is the color used when the value passed to the scale is not a known category. Default value: #6a6c6c.
+Typescript tip: You may disable category typesafety by passing a "loose" type hint to the function: ragScale<string>({...}).
+
+Easy swatches for your legend​
+When using a RAG scale, you can use the same arguments provided to create the scale to generate the corresponding swatches. This makes it easy to use a legend for the scale.
+
+smplr.Color.ragSwatches<C extends string | 'red' | 'amber' | 'green'>({
+  // same as ragScale
+  categories?: Partial<Record<'red' | 'amber' | 'green', C>>
+  colors?: {
+    red?: string
+    amber?: string
+    green?: string
+  }
+  nodata?: string
+  // additional swatches config
+  excludeNoData?: boolean
+  noDataLabel?: string
+}): {
+  color: string
+  label: string
+}[]
+categories, colors and nodata - refer to ragScale above.
+excludeNoData - optional - lets you opt out of having a swatch for the nodata color. Default value: false.
+noDataLabel - optional - lets you customize the label used for the nodata color. Default value: 'No data'.
+Legends
+Numerical scale legends​
+Specification​
+To render the legend of a numerical color scale, you can use the drawLegend function as follow:
+
+smplr.Color.drawLegend({
+  containerId: string
+  colorScale: (n: number | null | undefined) => string
+  domain?: [number, number]
+  ticks?: Record<number, number | string>
+  barStyle?: CSSProperties
+  labelStyle?: CSSProperties
+  correctColor?: boolean
+})
+containerId is the "id" of the html container where smplr.js should render the legend, something like "smplr-legend" that can be found in your html. Only ids are supported, not classes.
+colorScale is the numerical color scale for which the legend is rendered. It can come from our numericScale, or be a custom function that takes a numerical value and returns a color string.
+domain - optional - is the range of values to render the scale for. Default value: [0,1].
+ticks - optional - are the values to label at the bottom of the legend. It is defined as an object where the keys are the numerical values where the tick should be and the value are the labels. By default, there is one tick at each end of the legend with the numerical value displayed without formatting.
+barStyle - optional - react style object that will be applied to the bar containing the colors.
+labelStyle - optional - react style object that will be applied to the container of the labels. It is merged with ours: { fontSize: '0.8em', opacity: 0.5, height: 18 }. We set the height manually as the labels are absolutely positioned. You may need to change the height if you change the font or its size.
+correctColor - optional - lets you choose if the colors of the legend should be corrected to match the ones from the viewer as per the explanation in the color mapping section. We correct them by default. Default value: true.
+Note that the Legend will fill the width of its container.
+
+Example​
+10°C20°C30°C
+was rendered with the code below:
+
+smplr.Color.drawLegend({
+  containerId: "legend",
+  colorScale: smplr.Color.numericScale({
+    name: smplr.Color.NumericScale.RdYlBu,
+    domain: [10, 30],
+    invert: true,
+  }),
+  domain: [10, 30],
+  ticks: {
+    10: "10°C",
+    20: "20°C",
+    30: "30°C",
+  },
+});
+Categorical scale legends​
+Specification​
+To render the legend of a categorical color scale, you can use the drawColorSwatches function as follow:
+
+smplr.Color.drawColorSwatches({
+  containerId: string
+  swatches: {
+    color: string
+    label: string
+    group?: string
+  }[]
+  size?: number
+  correctColor?: boolean
+  noLabels?: boolean
+})
+containerId is the "id" of the html container where smplr.js should render the legend, something like "smplr-legend" that can be found in your html. Only ids are supported, not classes.
+swatches defines the colors and labels used for the swatches. Note that an optional group can be provided to create multiple lines with a label ahead of each group. You can refer to the ragSwatches and categorySwatches helpers to generate swatches for categorical scales generated with our functions.
+size - optional - is the size in pixels of each swatch. Default value: 10.
+correctColor - optional - lets you choose if the colors of the legend should be corrected to match the ones from the viewer as per the explanation in the color mapping section. We correct them by default. Default value: true.
+noLabels - optional - set this to true to hide labels. Default value: false.
+Example​
+Alert
+Warning
+All ok
+was rendered with the code below:
+
+smplr.Color.drawColorSwatches({
+  containerId: 'smplr-legend',
+  swatches: [
+    {
+      color: 'red',
+      label: 'Alert',
+    },
+    {
+      color: 'orange',
+      label: 'Warning',
+    },
+    {
+      color: 'green',
+      label: 'All ok',
+    },
+  ]
+});
+Icons legends​
+Specification​
+To render the legend for icons, you can use the drawIconsSwatches function as follow:
+
+smplr.Color.drawIconsSwatches({
+  containerId: string
+  icons: {
+    url: string
+    label: string
+    group?: string
+  }[]
+  height?: number
+  noLabels?: boolean
+})
+containerId is the "id" of the html container where smplr.js should render the legend, something like "smplr-legend" that can be found in your html. Only ids are supported, not classes.
+icons defines the icons and labels used for the swatches. Note that an optional group can be provided to create multiple lines with a label ahead of each group.
+height - optional - is the height in pixels of each swatch. Default value: 16.
+noLabels - optional - set this to true to hide labels. Default value: false.
+Example​
+
+EV charging
+
+Reduced mobility
+was rendered with the code below:
+
+smplr.Color.drawIconsSwatches({
+  containerId: 'smplr-legend',
+  icons: [
+    {
+      url: 'https://retail.smplrspace.io/img/electric.png',
+      label: 'EV charging',
+    },
+    {
+      url: 'https://retail.smplrspace.io/img/wheelchair.png',
+      label: 'Reduced mobility',
+    }
+  ],
+  height: 20
+});Color utilities
+cssToSmplrColor​
+As explained in the color mapping section, colors in the viewer are matching one to one to their CSS value. To convert a CSS color into its approximate perceived value in the viewer, you can call this function:
+
+smplr.Color.cssToSmplrColor(c: string) => string
+where c is the color string in CSS. Accepted formats are the hexadecimal value (e.g. "#2393d4") or the name of the color (e.g. "pink").
+
+smplrToCssColor​
+This is the opposite function of cssToSmplrColor and converts a color value as it is approximately perceived in the viewer, into its CSS equivalent.
+
+smplr.Color.smplrToCssColor(c: string) => string

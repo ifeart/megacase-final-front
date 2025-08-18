@@ -1,0 +1,116 @@
+
+Коротко: ваша логика верная. Я бы лишь усилил её двумя вещами: 1) сделать для комнат стабильные ID (авто‑комнаты из стен пересчитываются — лучше либо ваши “room entities”/assetmap, либо разовая фиксация полигонов в БД с вашими ID), 2) интерактивные тултипы под бронирование делать кастомными (или через onClick на элементах), а не “HTML-строкой”.
+
+Ниже — чёткая дорожка со стадиями, данными и минимальными примерами.
+
+### Дорожка (этапы)
+
+1) Создание спейса
+- `QueryClient.createSpace({ name })` → `spaceId` (SID `spc_xxx`).
+- Сохраняете `spaceId` в своей БД.
+
+2) Редактор (моделирование)
+- Встраиваете `new smplr.Editor({ spaceId, user, clientToken, containerId }).startSession()`.
+- Админ рисует стены/окна/двери/этажи/мебель.
+- Кнопка “Далее”: `QueryClient.setSpaceStatus({ spaceId, status: 'published' })`.
+
+3) Аннотации/маркеры (Viewer + picking)
+- Показываете `Space` с `startViewer`.
+- Включаете пиккинг для добавления ваших маркеров: `space.enablePickingMode({ onPick })`.
+- Маркеры сохраняете в свою БД: `{ markerId, spaceId, type, position|polygon, name, legendGroup }`.
+
+4) Экстракция геометрии для слоёв (rooms/furniture)
+- Комнаты:
+  - Вариант А (надежный): ваши стабильные “room entities” (через entity manager/assetmap или ваши полигоны). Эти ID не зависят от стен.
+  - Вариант Б (быстрый): `getRoomsOnLevel({ spaceId, levelIndex })` → присваиваете СВОИ `roomId` и сохраняете: `{ roomId, spaceId, coordinates, levelIndex, name }`. Если “стены не меняются”, этого достаточно, но фиксируйте версию.
+- Мебель:
+  - `getAllFurnitureInSpace(spaceId)` (или по уровням) → сохраняете `{ furnitureId, spaceId, levelIndex, name }`.
+- Инициализируете доступность (все свободны) в своей БД.
+
+5) Вьюер для бронирований (слои + тултипы)
+- Слои:
+  - Rooms: `addPolygonDataLayer` с `coordinates` и `color: d => available ? green : red`.
+  - Desks: `addFurnitureDataLayer` с `furnitureId` и тем же цветовым правилом.
+  - Markers: `addPointDataLayer` или `addIconDataLayer` с вашими данными.
+- Тултипы:
+  - Для действий (кнопка “Забронировать”): используйте кастомный/программный тултип или просто `onClick` на элементе → показываете UI сбоку/модалку.
+- Клик “Забронировать”:
+  - POST в ваш API → обновляете локальный стор статусов → `layerController.update({ data })` для перерисовки цветов.
+
+### Данные/модели
+
+- `rooms`: `{ roomId, spaceId, levelIndex, coordinates, name }`
+- `furniture`: `{ furnitureId, spaceId, levelIndex, name }` — furnitureId стабильный, идеален для брони столов
+- `markers`: `{ markerId, spaceId, type, position|polygon, name, legendGroup }`
+- `bookings`: `{ id, subjectType: 'room'|'desk', subjectId, status: 'available'|'reserved', userId, start/end? }`
+- `availability`: отдавайте агрегатом: `GET /booking/status?spaceId=...` → { [roomId]: boolean, [furnitureId]: boolean }
+
+### Минимальные действия по стадиям
+
+- Экстракция:
+```ts
+const smplrClient = new smplr.QueryClient({ organizationId, clientToken });
+// комнаты
+const roomsL0 = await smplrClient.getRoomsOnLevel({ spaceId, levelIndex: 0 });
+const myRooms = roomsL0?.map((r, i) => ({
+  roomId: `rm-${i}`, coordinates: r.room, levelIndex: 0, name: `Room ${i+1}`
+}));
+// мебель
+const furn = await smplrClient.getAllFurnitureInSpace(spaceId);
+const desks = furn.filter(f => /* ваш критерий стола */).map(f => ({
+  furnitureId: f.id, levelIndex: f.levelIndex, name: f.name || 'Desk'
+}));
+await api.saveGeometry({ rooms: myRooms, desks });
+```
+
+- Слои бронирования:
+```ts
+// Rooms
+const roomsData = await api.getRoomsWithAvailability(spaceId);
+const roomsCtrl = space.addPolygonDataLayer({
+  id: 'rooms',
+  data: roomsData,
+  height: 2.9,
+  alpha: 0.7,
+  color: d => d.available ? '#48B695' : '#E74157',
+  tooltip: d => `${d.name} - ${d.available ? 'free' : 'occupied'}`,
+  onClick: async d => { await api.toggleBooking('room', d.roomId); roomsCtrl.update({ data: await api.getRoomsWithAvailability(spaceId) }); }
+});
+
+// Desks
+const desksData = await api.getDesksWithAvailability(spaceId);
+const desksCtrl = space.addFurnitureDataLayer({
+  id: 'desks',
+  data: desksData.map(d => ({ ...d, furnitureId: d.furnitureId })),
+  color: d => d.available ? '#50b268' : '#f75e56',
+  tooltip: d => `${d.name} - ${d.available ? 'free' : 'occupied'}`,
+  onClick: async d => { await api.toggleBooking('desk', d.furnitureId); desksCtrl.update({ data: await api.getDesksWithAvailability(spaceId) }); }
+});
+```
+
+- Маркеры (пиккинг):
+```ts
+space.enablePickingMode({
+  onPick: ({ coordinates }) => {
+    // открыть форму создания маркера; сохранить в БД; layer.update
+    space.disablePickingMode();
+  }
+});
+```
+
+### Важные решения
+
+- Комнаты: если хотите “сохранить и забыть” — фиксируйте их у себя (Вариант Б) и не меняйте стены. Если стены возможны к изменениям — лучше перейти на “room entities” (entity manager) со стабильными ID.
+- Тултипы с кнопками — делайте кастомными (или `onClick` на элементе + UI слева/модалка). HTML-строка безопасная, но события в ней не предназначены для сложного интерактива.
+- Мебельный слой работает в 3D; учитывайте это в UX (разрешите 3D режим).
+
+### UI-поток (в виде шагов)
+- Шаг 1: `EditorView(spaceId)` → Publish → Далее
+- Шаг 2: `AnnotateView(spaceId)` (Viewer+Picking, добавление маркеров) → Кнопка “Извлечь геометрию” → сохраняем rooms/furniture → Далее
+- Шаг 3: `BookingView(spaceId)` (Viewer + слои Rooms/Desks/Markers, цвета от доступности, тултипы/клики для брони)
+
+Готов имплементировать скелет экранов (3 компонента), стор доступности и хелперы `QueryClient`/слоёв.
+
+- Ваша логика подтверждена; усилил прочность ID для комнат и интерактивные тултипы.
+- Дал пошаговый сценарий с чёткими точками интеграции (`Editor`, `Space`, `QueryClient`).
+- Приложил минимальные вызовы API слоёв и пиккинга, и схему данных/эндпоинтов для брони.

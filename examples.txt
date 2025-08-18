@@ -1,0 +1,2729 @@
+полностью проанализируй докуметацию библиотеки smplrspace, включая все методы для работы с бронированием отдельных комнат. последовательностью работы и методами для работы с оборудованием, мебелью, маркерами, комнатами, чтобы при наведении была логика. разработчиками представлены такие примеры - первый это - Add data elements
+A quick tutorial on how to use the picking mode in your admin interface to add data elements such as sensor locations, rooms and areas, or desks., import React, {
+  useState,
+  useCallback,
+  useReducer,
+  useEffect,
+  Fragment,
+  FC,
+} from 'react';
+import Chance from 'chance';
+import { pipe, A, D, F } from '@mobily/ts-belt';
+import { loadSmplrJs, Space, QueryClient } from '@smplrspace/smplr-loader';
+
+import { SpaceViewer } from './SpaceViewer';
+import {
+  DispatchPointAction,
+  DispatchPolygonAction,
+  DispatchPolylineAction,
+  DispatchFurnitureAction,
+  Point,
+  Polygon,
+  Polyline,
+  Furniture,
+} from './types';
+import { intersperseWithIndex } from './utils';
+import { Button } from 'antd';
+
+const chance = new Chance();
+
+export const IDS = {
+  spaceId: 'edb2ebaa-47ea-4e54-af0d-cf543328bdb0',
+  organizationId: '99e1d0c3-ae44-4316-8f1b-9d7009012eb5',
+  clientToken: 'pub_eb760fee77634cdab2fe31146fc371c2',
+};
+
+export const AddDataElements: FC = () => {
+  const [space, setSpace] = useState<Space>();
+  const [queryClient, setQueryClient] = useState<QueryClient>();
+
+  useEffect(() => {
+    // we recommend using the default value 'esm' in your code but stackblitz required 'umd'
+    loadSmplrJs('umd')
+      .then((smplr) => {
+        const client = new smplr.QueryClient(IDS);
+        setQueryClient(client);
+      })
+      .catch((error) => console.error(error));
+  }, []);
+
+  const [task, setTask] = useState<
+    | 'idle'
+    | 'drawPoint'
+    | 'drawPolygon'
+    | 'drawPolyline'
+    | 'drawRoom'
+    | 'drawFurniture'
+  >('idle');
+  const [editingId, setEditingId] = useState<string | undefined>();
+
+  const [points, dispatchPoint] = useReducer(
+    (points: Point[], action: DispatchPointAction) => {
+      switch (action.type) {
+        case 'add':
+          return [...points, action.point];
+        case 'update':
+          return points.map((pt) =>
+            pt.id === action.id ? { ...pt, ...action.updates } : pt
+          );
+        case 'remove':
+          return pipe(
+            points,
+            A.reject((r: Point) => r.id === action.id),
+            F.toMutable
+          );
+      }
+    },
+    []
+  );
+
+  const [polygons, dispatchPolygon] = useReducer(
+    (polygons: Polygon[], action: DispatchPolygonAction) => {
+      switch (action.type) {
+        case 'addPolygon':
+          return A.append(polygons, {
+            id: action.id,
+            name:
+              chance.letter({ casing: 'upper' }) +
+              chance.integer({ min: 1, max: 9 }),
+            coordinates: action.coordinates || [],
+          });
+        case 'addCoordinate':
+          return polygons.map((r) =>
+            r.id === action.id
+              ? { ...r, coordinates: [...r.coordinates, action.coordinate] }
+              : r
+          );
+        case 'updateCoordinates':
+          return polygons.map((r) =>
+            r.id === action.id ? { ...r, coordinates: action.coordinates } : r
+          );
+        case 'removePolygon':
+          return pipe(
+            polygons,
+            A.reject((r: Polygon) => r.id === action.id),
+            F.toMutable
+          );
+      }
+    },
+    []
+  );
+
+  const [polylines, dispatchPolyline] = useReducer(
+    (polylines: Polyline[], action: DispatchPolylineAction) => {
+      switch (action.type) {
+        case 'addPolyline':
+          return A.append(polylines, {
+            id: action.id,
+            name:
+              chance.letter({ casing: 'upper' }) +
+              chance.integer({ min: 1, max: 9 }),
+            coordinates: [],
+          });
+        case 'addCoordinate':
+          return polylines.map((r) =>
+            r.id === action.id
+              ? { ...r, coordinates: [...r.coordinates, action.coordinate] }
+              : r
+          );
+        case 'updateCoordinates':
+          return polylines.map((r) =>
+            r.id === action.id ? { ...r, coordinates: action.coordinates } : r
+          );
+        case 'removePolyline':
+          return pipe(
+            polylines,
+            A.reject((r: Polyline) => r.id === action.id),
+            F.toMutable
+          );
+      }
+    },
+    []
+  );
+
+  const [furniture, dispatchFurniture] = useReducer(
+    (furniture: Furniture[], action: DispatchFurnitureAction) => {
+      switch (action.type) {
+        case 'add':
+          return [...furniture, action.furniture];
+        case 'remove':
+          return pipe(
+            furniture,
+            A.reject((f: Furniture) => f.id === action.id),
+            F.toMutable
+          );
+      }
+    },
+    []
+  );
+
+  // memoize so Viewer render once only (wrapped in memo)
+  const onReady = useCallback((space) => setSpace(space), []);
+
+  // switch picking mode
+  useEffect(() => {
+    if (!space) {
+      return;
+    }
+    if (task === 'drawPoint') {
+      space.enablePickingMode({
+        onPick: ({ coordinates }) => {
+          dispatchPoint({
+            type: 'add',
+            point: {
+              id: chance.guid(),
+              name:
+                chance.letter({ casing: 'upper' }) +
+                chance.integer({ min: 1, max: 9 }),
+              position: coordinates,
+            },
+          });
+        },
+      });
+    } else if (task === 'drawPolygon') {
+      space.enablePickingMode({
+        onPick: ({ coordinates }) => {
+          dispatchPolygon({
+            type: 'addCoordinate',
+            id: editingId,
+            coordinate: coordinates,
+          });
+        },
+      });
+    } else if (task === 'drawRoom') {
+      space.enablePickingMode({
+        onPick: async ({ coordinates }) => {
+          const room = await queryClient.getRoomAtPoint({
+            spaceId: IDS.spaceId,
+            point: coordinates,
+          });
+          dispatchPolygon({
+            type: 'addPolygon',
+            id: chance.guid(),
+            coordinates: room.room,
+          });
+        },
+      });
+    } else if (task === 'drawPolyline') {
+      space.enablePickingMode({
+        onPick: ({ coordinates }) => {
+          dispatchPolyline({
+            type: 'addCoordinate',
+            id: editingId,
+            coordinate: coordinates,
+          });
+        },
+      });
+    } else if (task === 'drawFurniture') {
+      space.enablePickingMode({
+        onPick: ({ furnitureId }) => {
+          dispatchFurniture({
+            type: 'add',
+            furniture: {
+              id: chance.guid(),
+              name:
+                chance.letter({ casing: 'upper' }) +
+                chance.integer({ min: 1, max: 9 }),
+              furnitureId,
+            },
+          });
+        },
+      });
+    } else {
+      space.disablePickingMode();
+    }
+  }, [space, editingId, task]);
+
+  // render elements
+  useEffect(() => {
+    if (!space) {
+      return;
+    }
+    space.addDataLayer({
+      id: 'points',
+      type: 'point',
+      shape: 'sphere',
+      data: points,
+      diameter: 0.5,
+      anchor: 'bottom',
+      tooltip: (d) => d.name,
+      onDrop: ({ data, position }) =>
+        dispatchPoint({
+          type: 'update',
+          id: data.id,
+          updates: { position },
+        }),
+    });
+  }, [space, points]);
+
+  useEffect(() => {
+    if (!space) {
+      return;
+    }
+    space.addDataLayer({
+      id: 'polygons',
+      type: 'polygon',
+      data: pipe(
+        polygons,
+        A.reject((p) => A.isEmpty(p.coordinates)),
+        F.toMutable
+      ),
+      height: 3.05,
+      alpha: 0.5,
+      tooltip: (d) => d.name,
+      onDrop: ({ data, coordinates }) =>
+        dispatchPolygon({
+          type: 'updateCoordinates',
+          id: data.id,
+          coordinates,
+        }),
+    });
+  }, [space, polygons]);
+
+  useEffect(() => {
+    if (!space) {
+      return;
+    }
+    space.addDataLayer({
+      id: 'polylines',
+      type: 'polyline',
+      data: pipe(
+        polylines,
+        A.reject((p) => A.isEmpty(p.coordinates)),
+        F.toMutable
+      ),
+      scale: 0.2,
+      tooltip: (d) => d.name,
+      onDrop: ({ data, coordinates }) =>
+        dispatchPolyline({
+          type: 'updateCoordinates',
+          id: data.id,
+          coordinates,
+        }),
+    });
+  }, [space, polylines]);
+
+  useEffect(() => {
+    if (!space) {
+      return;
+    }
+    space.addDataLayer({
+      id: 'furniture',
+      type: 'furniture',
+      data: furniture,
+      tooltip: (d) => d.name,
+    });
+  }, [space, furniture]);
+
+  return (
+    <div style={{ display: 'flex', flexWrap: 'wrap' }}>
+      <div style={{ width: '100%', marginBottom: '1em' }}>
+        <SpaceViewer {...IDS} onReady={onReady} />
+      </div>
+      {!space ? (
+        <p>Please start the viewer</p>
+      ) : (
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            width: '100%',
+            marginBottom: '20px',
+          }}
+        >
+          <p>👉 Click "Add" and draw elements on the floor plan</p>
+
+          <h4 style={{ marginBottom: 0 }}>Points</h4>
+          <span style={{ marginTop: 0 }}>
+            {pipe(
+              points,
+              A.map((p) => (
+                <Fragment key={p.id}>
+                  {p.name}{' '}
+                  <Button
+                    type="link"
+                    style={{ padding: 0 }}
+                    onClick={() => dispatchPoint({ type: 'remove', id: p.id })}
+                  >
+                    x
+                  </Button>
+                </Fragment>
+              )),
+              intersperseWithIndex(() => <span> - </span>)
+            )}
+            {' - '}
+            {task !== 'drawPoint' ? (
+              <Button
+                type="link"
+                style={{ padding: 0 }}
+                onClick={() => {
+                  setTask('drawPoint');
+                }}
+              >
+                Add
+              </Button>
+            ) : (
+              <Button
+                type="link"
+                style={{ padding: 0 }}
+                onClick={() => {
+                  setTask('idle');
+                }}
+              >
+                Done
+              </Button>
+            )}
+          </span>
+
+          <h4 style={{ marginTop: '1em', marginBottom: 0 }}>Polygons</h4>
+          <span style={{ marginTop: 0 }}>
+            {pipe(
+              polygons,
+              A.map((p) => (
+                <Fragment key={p.id}>
+                  {p.name}{' '}
+                  <Button
+                    type="link"
+                    style={{ padding: 0 }}
+                    onClick={() =>
+                      dispatchPolygon({ type: 'removePolygon', id: p.id })
+                    }
+                  >
+                    x
+                  </Button>
+                </Fragment>
+              )),
+              intersperseWithIndex(() => <span> - </span>)
+            )}
+            {' - '}
+            <Button
+              type="link"
+              style={{ padding: 0 }}
+              onClick={() => {
+                const id = chance.guid();
+                dispatchPolygon({ type: 'addPolygon', id });
+                setEditingId(id);
+                setTask('drawPolygon');
+              }}
+            >
+              Add manually
+            </Button>
+            {task !== 'drawRoom' && (
+              <Fragment>
+                {' - '}
+                <Button
+                  type="link"
+                  style={{ padding: 0 }}
+                  onClick={() => {
+                    setTask('drawRoom');
+                  }}
+                >
+                  Add rooms
+                </Button>
+              </Fragment>
+            )}
+            {(task === 'drawPolygon' || task === 'drawRoom') && (
+              <Fragment>
+                {' - '}
+                <Button
+                  type="link"
+                  style={{ padding: 0 }}
+                  onClick={() => {
+                    setEditingId(undefined);
+                    setTask('idle');
+                  }}
+                >
+                  Done
+                </Button>
+              </Fragment>
+            )}
+          </span>
+
+          <h4 style={{ marginTop: '1em', marginBottom: 0 }}>Polylines</h4>
+          <span style={{ marginTop: 0 }}>
+            {pipe(
+              polylines,
+              A.map((p) => (
+                <Fragment key={p.id}>
+                  {p.name}{' '}
+                  <Button
+                    type="link"
+                    style={{ padding: 0 }}
+                    onClick={() =>
+                      dispatchPolyline({ type: 'removePolyline', id: p.id })
+                    }
+                  >
+                    x
+                  </Button>
+                </Fragment>
+              )),
+              intersperseWithIndex(() => <span> - </span>)
+            )}
+            {' - '}
+            <Button
+              type="link"
+              style={{ padding: 0 }}
+              onClick={() => {
+                const id = chance.guid();
+                dispatchPolyline({ type: 'addPolyline', id });
+                setEditingId(id);
+                setTask('drawPolyline');
+              }}
+            >
+              Add
+            </Button>
+            {task === 'drawPolyline' && (
+              <Fragment>
+                {' - '}
+                <Button
+                  type="link"
+                  style={{ padding: 0 }}
+                  onClick={() => {
+                    setEditingId(undefined);
+                    setTask('idle');
+                  }}
+                >
+                  Done
+                </Button>
+              </Fragment>
+            )}
+          </span>
+
+          {/* TODO: fix rendering glitch */}
+          {/* <h4 style={{ marginTop: '1em', marginBottom: 0 }}>Furniture</h4>
+          <span style={{ marginTop: 0 }}>
+            {pipe(
+              furniture,
+              A.map((p) => (
+                <Fragment key={p.id}>
+                  {p.name}{' '}
+                  <Button
+                    type="link"
+                    style={{ padding: 0 }}
+                    onClick={() =>
+                      dispatchFurniture({ type: 'remove', id: p.id })
+                    }
+                  >
+                    x
+                  </Button>
+                </Fragment>
+              )),
+              intersperseWithIndex(() => <span> - </span>)
+            )}
+            {' - '}
+            {task !== 'drawFurniture' ? (
+              <Button
+                type="link"
+                style={{ padding: 0 }}
+                onClick={() => {
+                  setTask('drawFurniture');
+                }}
+              >
+                Add
+              </Button>
+            ) : (
+              <Button
+                type="link"
+                style={{ padding: 0 }}
+                onClick={() => {
+                  setTask('idle');
+                }}
+              >
+                Done
+              </Button>
+            )}
+          </span> */}
+        </div>
+      )}
+    </div>
+  );
+};
+import * as React from 'react';
+import { FC, useEffect } from 'react';
+import { loadSmplrJs, Space } from '@smplrspace/smplr-loader';
+
+export const SpaceViewer: FC<{
+  spaceId: string;
+  clientToken: string;
+  onReady: (space: Space) => void;
+}> = ({ spaceId, clientToken, onReady }) => {
+  useEffect(() => {
+    // we recommend using the default value 'esm' in your code but stackblitz required 'umd'
+    loadSmplrJs('umd')
+      .then((smplr) => {
+        const space = new smplr.Space({
+          spaceId,
+          clientToken,
+          containerId: 'younameit',
+        });
+        space.startViewer({
+          preview: false,
+          allowModeChange: true,
+          onReady: () => onReady(space),
+          onError: (error) => console.error('Could not start viewer', error),
+        });
+      })
+      .catch((error) => console.error(error));
+  }, []);
+
+  return (
+    <div className="smplr-wrapper">
+      <div id="younameit" className="smplr-embed"></div>
+    </div>
+  );
+};
+import { SmplrCoord2d, SmplrCoord3d } from '@smplrspace/smplr-loader';
+
+export type Point = {
+  id: string;
+  name: string;
+  position: SmplrCoord3d;
+};
+
+export type Polygon = {
+  id: string;
+  name: string;
+  coordinates: SmplrCoord2d[];
+};
+
+export type Polyline = {
+  id: string;
+  name: string;
+  coordinates: SmplrCoord3d[];
+};
+
+export type Furniture = {
+  id: string;
+  name: string;
+  furnitureId: string;
+};
+
+export type DispatchPointAction =
+  | {
+      type: 'add';
+      point: Point;
+    }
+  | {
+      type: 'update';
+      id: string;
+      updates: Partial<Point>;
+    }
+  | {
+      type: 'remove';
+      id: string;
+    };
+
+export type DispatchPolygonAction =
+  | {
+      type: 'addCoordinate';
+      id: string;
+      coordinate: SmplrCoord2d;
+    }
+  | {
+      type: 'updateCoordinates';
+      id: string;
+      coordinates: SmplrCoord2d[];
+    }
+  | {
+      type: 'addPolygon';
+      id: string;
+      coordinates?: SmplrCoord2d[];
+    }
+  | { type: 'removePolygon'; id: string };
+
+export type DispatchPolylineAction =
+  | {
+      type: 'addCoordinate';
+      id: string;
+      coordinate: SmplrCoord3d;
+    }
+  | {
+      type: 'updateCoordinates';
+      id: string;
+      coordinates: SmplrCoord3d[];
+    }
+  | { type: 'addPolyline'; id: string }
+  | { type: 'removePolyline'; id: string };
+
+export type DispatchFurnitureAction =
+  | {
+      type: 'add';
+      furniture: Furniture;
+    }
+  | {
+      type: 'remove';
+      id: string;
+    };, дальше пример для конструктора - то есть эдитора - import './style.css';
+import { loadSmplrJs, Smplr } from '@smplrspace/smplr-loader';
+
+export function initSpace(smplr: Smplr) {
+  const editor = new smplr.Editor({
+    spaceId: '8cafcdc4-e5db-4cc1-a218-a7c9e805bb02',
+    user: {
+      id: '22e34786-72be-470b-b5e2-8b2bf29801eb',
+      name: 'Walter Gropius',
+      picture:
+        'https://www.thefamouspeople.com/profiles/images/walter-gropius-1.jpg',
+    },
+    clientToken: 'pub_d3d112d5391f404b92f7e3a8fea8f5ec',
+    containerId: 'test',
+  });
+  editor.startSession();
+}
+
+// we recommend using the default value 'esm' in your code but stackblitz required 'umd'
+loadSmplrJs('umd', 'dev')
+  .then((smplr) => initSpace(smplr))
+  .catch((error) => console.error(error));
+, и дальше как раз то, что интересует меня больше всего - это система для бронирвоания свободных комнат или мест - то есть мебель прям подкрашивается. import * as React from 'react';
+import { FC, useEffect, useState, useCallback } from 'react';
+import { loadSmplrJs } from '@smplrspace/smplr-loader';
+import { Space } from '@smplrspace/smplr-loader/dist/generated/smplr';
+
+import { Room, Desk, rooms, desks } from './data';
+
+export const SpaceViewer: FC = () => {
+  const spaceRef = React.useRef<Space>();
+
+  const [viewerReady, setViewerReady] = useState(false);
+  const [note, setNote] = useState('Click a desk or room');
+
+  // start viewer
+  useEffect(() => {
+    // we recommend using the default value 'esm' in your code but stackblitz required 'umd'
+    loadSmplrJs('umd')
+      .then((smplr) => {
+        spaceRef.current = new smplr.Space({
+          spaceId: 'f438671f-9979-42c6-8338-05c0015abb2d',
+          clientToken: 'pub_eb760fee77634cdab2fe31146fc371c2',
+          containerId: 'test',
+        });
+        spaceRef.current.startViewer({
+          preview: true,
+          allowModeChange: true,
+          onReady: () => setViewerReady(true),
+          onError: (error) => console.error('Could not start viewer', error),
+        });
+      })
+      .catch((error) => console.error(error));
+  }, []);
+
+  // show data when viewer ready
+  useEffect(() => {
+    if (!viewerReady) {
+      return;
+    }
+    spaceRef.current.addDataLayer<Room>({
+      id: 'rooms',
+      type: 'polygon',
+      data: rooms,
+      tooltip: (d) => `${d.name} - ${d.available ? 'free' : 'occupied'}`,
+      color: (d) => (d.available ? '#3aa655' : '#ff3f34'),
+      alpha: 0.7,
+      height: 2.9,
+      onClick: (d) => {
+        setNote(`${d.name} is ${d.available ? 'free' : 'taken'}`);
+      },
+    });
+    spaceRef.current.addDataLayer<Desk>({
+      id: 'desks',
+      type: 'furniture',
+      data: desks,
+      tooltip: (d) => `${d.name} - ${d.available ? 'free' : 'occupied'}`,
+      color: (d) => (d.available ? '#50b268' : '#f75e56'),
+      onClick: (d) => {
+        setNote(`${d.name} is ${d.available ? 'free' : 'taken'}`);
+      },
+    });
+    return () => {
+      spaceRef.current.removeDataLayer('rooms');
+      spaceRef.current.removeDataLayer('desks');
+    };
+  }, [viewerReady]);
+
+  // render
+  return (
+    <>
+      <div className="smplr-wrapper">
+        <div id="test" className="smplr-embed"></div>
+      </div>
+      <p>{note}</p>
+    </>
+  );
+};, // TODO: should be exported by smplr.js
+type UnknownData = Record<string, unknown>;
+
+export interface Room extends UnknownData {
+  name: string;
+  available: boolean;
+}
+export const rooms = [
+  {
+    id: 'c92d5ab7-ed65-5e01-9bb1-87c3936f91c7',
+    name: 'Solomon Islands',
+    available: false,
+    coordinates: [
+      {
+        levelIndex: 0,
+        x: 40.203718612194216,
+        z: -23.306753274718695,
+        elevation: 3.0000000000000018,
+      },
+      {
+        levelIndex: 0,
+        x: 40.22122651150137,
+        z: -26.669988026909387,
+        elevation: 3,
+      },
+      {
+        levelIndex: 0,
+        x: 36.51388811443829,
+        z: -26.686133552033493,
+        elevation: 3.0000000000000018,
+      },
+      {
+        levelIndex: 0,
+        x: 36.5153183949447,
+        z: -23.31118653771804,
+        elevation: 3.0000000000000018,
+      },
+    ],
+  },
+  {
+    id: '59a3c0ce-14b6-5abb-b669-a692a2276854',
+    name: 'Macedonia',
+    available: false,
+    coordinates: [
+      {
+        levelIndex: 0,
+        x: 36.46370341269504,
+        z: -26.688549138532135,
+        elevation: 3.000000000000001,
+      },
+      {
+        levelIndex: 0,
+        x: 40.182897753955004,
+        z: -26.681214169936705,
+        elevation: 3,
+      },
+      {
+        levelIndex: 0,
+        x: 40.193644182556476,
+        z: -30.298842890020858,
+        elevation: 3.000000000000001,
+      },
+      {
+        levelIndex: 0,
+        x: 36.48734955337046,
+        z: -30.214651607060638,
+        elevation: 3,
+      },
+    ],
+  },
+  {
+    id: '036a96ca-e399-5f51-970c-314bbca5e98f',
+    name: 'Svalbard & Jan Mayen',
+    available: true,
+    coordinates: [
+      {
+        levelIndex: 0,
+        x: 40.16738177307249,
+        z: -20.080774531807236,
+        elevation: 3,
+      },
+      {
+        levelIndex: 0,
+        x: 40.1987913511868,
+        z: -23.335612759519496,
+        elevation: 2.999999999999999,
+      },
+      {
+        levelIndex: 0,
+        x: 36.49553237308718,
+        z: -23.33511299009598,
+        elevation: 3,
+      },
+      {
+        levelIndex: 0,
+        x: 36.51295651496384,
+        z: -20.089504033364584,
+        elevation: 3,
+      },
+    ],
+  },
+  {
+    id: '11afc6ff-e8f0-5515-819b-f612e5e6e4db',
+    name: 'Seychelles',
+    available: false,
+    coordinates: [
+      {
+        levelIndex: 0,
+        x: 36.49649326412398,
+        z: -16.63988686544199,
+        elevation: 3.000000000000001,
+      },
+      {
+        levelIndex: 0,
+        x: 40.19479233612874,
+        z: -16.668111790024728,
+        elevation: 3.000000000000001,
+      },
+      {
+        levelIndex: 0,
+        x: 40.19410700529682,
+        z: -20.09916234963896,
+        elevation: 3.000000000000001,
+      },
+      {
+        levelIndex: 0,
+        x: 36.4813838333872,
+        z: -20.055243896317577,
+        elevation: 3,
+      },
+    ],
+  },
+  {
+    id: '5d1739ac-27ca-5788-a9fd-c8decc13d690',
+    name: 'French Polynesia',
+    available: true,
+    coordinates: [
+      {
+        levelIndex: 0,
+        x: 15.04806712881521,
+        z: -23.33454991034874,
+        elevation: 3,
+      },
+      {
+        levelIndex: 0,
+        x: 11.295745340092939,
+        z: -23.35437606203257,
+        elevation: 3.000000000000001,
+      },
+      {
+        levelIndex: 0,
+        x: 11.324318728195218,
+        z: -16.63384538418456,
+        elevation: 3.000000000000001,
+      },
+      {
+        levelIndex: 0,
+        x: 15.092448946981085,
+        z: -16.68764442736808,
+        elevation: 2.999999999999999,
+      },
+    ],
+  },
+  {
+    id: '63de941e-8b30-5bbd-b169-f8936c07c838',
+    name: 'Honduras',
+    available: true,
+    coordinates: [
+      {
+        levelIndex: 1,
+        x: 14.89187724621965,
+        z: -3.426680312717954,
+        elevation: 3,
+      },
+      {
+        levelIndex: 1,
+        x: 23.506329507114124,
+        z: -3.430675090338319,
+        elevation: 2.9999999999999982,
+      },
+      {
+        levelIndex: 1,
+        x: 23.41269488016559,
+        z: -8.016338429811265,
+        elevation: 2.9873285046245375,
+      },
+      {
+        levelIndex: 1,
+        x: 14.887605867663623,
+        z: -7.896800623116045,
+        elevation: 3.0000000000000018,
+      },
+    ],
+  },
+  {
+    id: '7170ca48-c9de-56e5-9a4f-d7f1ebf2edaf',
+    name: 'Kyrgyzstan',
+    available: false,
+    coordinates: [
+      {
+        levelIndex: 1,
+        x: 11.207080859231597,
+        z: -7.430594864986327,
+        elevation: 3.0000000000000036,
+      },
+      {
+        levelIndex: 1,
+        x: 14.90446556418484,
+        z: -7.441644951078214,
+        elevation: 3.0000000000000018,
+      },
+      {
+        levelIndex: 1,
+        x: 14.922510114728082,
+        z: -3.5089953607527455,
+        elevation: 2.9999999999999982,
+      },
+      {
+        levelIndex: 1,
+        x: 11.212943218785965,
+        z: -3.3787455160767745,
+        elevation: 3,
+      },
+    ],
+  },
+  {
+    id: '7170ca48-c9de-56e5-9a4f-d7f1ebf3cdaf',
+    name: 'French Guiana',
+    available: true,
+    coordinates: [
+      {
+        levelIndex: 1,
+        x: 36.50321724735736,
+        z: -31.889972015465478,
+        elevation: 3,
+      },
+      {
+        levelIndex: 1,
+        x: 40.204957245318305,
+        z: -31.873666221847362,
+        elevation: 3.0000000000000036,
+      },
+      {
+        levelIndex: 1,
+        x: 40.18676019873648,
+        z: -35.819203830933375,
+        elevation: 2.9999999999999982,
+      },
+      {
+        levelIndex: 1,
+        x: 36.50157059348514,
+        z: -35.8042262584227,
+        elevation: 3.0000000000000036,
+      },
+    ],
+  },
+];
+
+export interface Desk extends UnknownData {
+  name: string;
+  available: boolean;
+}
+export const desks = [
+  {
+    name: 'Desk 01',
+    furnitureId: 'afd95f5f-8f27-4f3a-be0a-15bddbbe0b8f',
+    available: false,
+  },
+  {
+    name: 'Desk 02',
+    furnitureId: 'c7ddd9a4-afbe-4aa7-bbba-b1e503e6b153',
+    available: false,
+  },
+  {
+    name: 'Desk 03',
+    furnitureId: 'fada9da5-0504-46ea-bad7-29c3ab62366b',
+    available: true,
+  },
+  {
+    name: 'Desk 04',
+    furnitureId: '0b714fbf-316f-4d52-ac31-9752796d0496',
+    available: true,
+  },
+  {
+    name: 'Desk 05',
+    furnitureId: '7d6a3805-b191-49ff-b680-a43518dba629',
+    available: true,
+  },
+  {
+    name: 'Desk 06',
+    furnitureId: '05e3242f-0571-456a-9dc0-2cc653f8730e',
+    available: false,
+  },
+  {
+    name: 'Desk 07',
+    furnitureId: '6fe98474-e40e-4d28-9c0e-14c14770067e',
+    available: true,
+  },
+  {
+    name: 'Desk 08',
+    furnitureId: '86e4dedd-de2b-40f7-916c-b4129ef83729',
+    available: true,
+  },
+  {
+    name: 'Desk 09',
+    furnitureId: '57d955f1-5cb9-4e65-a42f-9d0032fab387',
+    available: true,
+  },
+  {
+    name: 'Desk 10',
+    furnitureId: '4cd6679a-b01a-4cd6-aa65-ab848bb8ac8a',
+    available: true,
+  },
+  {
+    name: 'Desk 11',
+    furnitureId: '0623fe98-02f6-4866-9eb6-00d8e43357d2',
+    available: false,
+  },
+  {
+    name: 'Desk 12',
+    furnitureId: 'd30b501f-c31a-4d61-9da2-bf90d0e9af66',
+    available: true,
+  },
+  {
+    name: 'Desk 13',
+    furnitureId: 'ebdc0bd1-5cea-4e13-a6ef-f88497ebdead',
+    available: true,
+  },
+  {
+    name: 'Desk 14',
+    furnitureId: 'e05c1c62-97bb-4115-b768-f09137d3e03d',
+    available: false,
+  },
+  {
+    name: 'Desk 15',
+    furnitureId: '0e41c108-dd62-485a-8384-563addbc83c9',
+    available: true,
+  },
+  {
+    name: 'Desk 16',
+    furnitureId: 'bacb3d88-fe86-4ed7-ba0b-9004d6274827',
+    available: false,
+  },
+  {
+    name: 'Desk 17',
+    furnitureId: 'f9c0ed08-449a-4b41-a15a-2c73fe646315',
+    available: false,
+  },
+  {
+    name: 'Desk 18',
+    furnitureId: '74ae4f73-7ed0-43e3-adf5-e0d8752da257',
+    available: false,
+  },
+  {
+    name: 'Desk 19',
+    furnitureId: '5b12e89c-6753-40ea-acc5-7afe398428d6',
+    available: true,
+  },
+  {
+    name: 'Desk 20',
+    furnitureId: '5a609c2a-5097-4b89-a570-7e4d72503438',
+    available: false,
+  },
+  {
+    name: 'Desk 21',
+    furnitureId: '39bd5ad1-e81e-48c7-8f48-ee224bd217ca',
+    available: false,
+  },
+  {
+    name: 'Desk 22',
+    furnitureId: 'bf0eb517-0979-48dd-91eb-684281aaf655',
+    available: true,
+  },
+  {
+    name: 'Desk 23',
+    furnitureId: '7eff079b-a1d8-4b49-889c-1458f24fa888',
+    available: true,
+  },
+  {
+    name: 'Desk 24',
+    furnitureId: 'b6431c83-f717-4c1f-81d3-b84f07ac5ce9',
+    available: false,
+  },
+  {
+    name: 'Desk 25',
+    furnitureId: '350ef86c-0740-485b-8f23-e16c73c7d98a',
+    available: false,
+  },
+  {
+    name: 'Desk 26',
+    furnitureId: '74d5fb69-1852-4690-872c-dd60dae787f4',
+    available: true,
+  },
+  {
+    name: 'Desk 27',
+    furnitureId: 'f4258427-efea-44d6-bcde-cb5d9e266780',
+    available: true,
+  },
+  {
+    name: 'Desk 28',
+    furnitureId: 'dfb7cd61-7677-4cdd-aef8-773b4597ee45',
+    available: true,
+  },
+  {
+    name: 'Desk 29',
+    furnitureId: '6f0bd9f1-d83f-4294-a7b2-73daf8b8f820',
+    available: false,
+  },
+  {
+    name: 'Desk 30',
+    furnitureId: 'f5a32e8b-090d-4187-8fde-b4da64aba065',
+    available: true,
+  },
+  {
+    name: 'Desk 31',
+    furnitureId: '6d762b05-f69d-4246-94e2-7ee712f42637',
+    available: false,
+  },
+  {
+    name: 'Desk 32',
+    furnitureId: '3a3065d8-49f9-4fc7-823b-723a49071fbf',
+    available: false,
+  },
+  {
+    name: 'Desk 33',
+    furnitureId: 'a5a4d718-5df9-49a9-aac3-a897c287275f',
+    available: false,
+  },
+  {
+    name: 'Desk 34',
+    furnitureId: 'fc4b3b67-532e-4278-bbab-a2f607da4b8b',
+    available: true,
+  },
+  {
+    name: 'Desk 35',
+    furnitureId: 'bbb13212-b33c-4870-bf97-0d05cdcc1eb7',
+    available: true,
+  },
+  {
+    name: 'Desk 36',
+    furnitureId: '65d03169-8ebf-4481-a614-701cfdf32bc0',
+    available: true,
+  },
+  {
+    name: 'Desk 37',
+    furnitureId: 'efc72015-d491-4e3b-ac7c-599b48402465',
+    available: true,
+  },
+  {
+    name: 'Desk 38',
+    furnitureId: '35367538-3391-4973-9639-5d8116bfc502',
+    available: false,
+  },
+  {
+    name: 'Desk 39',
+    furnitureId: '4409af5a-ce88-4c29-88f3-90af2374b818',
+    available: true,
+  },
+  {
+    name: 'Desk 40',
+    furnitureId: 'd9238dd0-a4b4-446b-b2b1-822d68a1717d',
+    available: true,
+  },
+  {
+    name: 'Desk 41',
+    furnitureId: '2919b73d-8c7e-41a7-a594-876beb1f3ebc',
+    available: true,
+  },
+  {
+    name: 'Desk 42',
+    furnitureId: 'd7e74365-3f05-44ff-81ab-64b1e766f953',
+    available: true,
+  },
+  {
+    name: 'Desk 43',
+    furnitureId: 'edaf3b4b-55e3-426f-be00-acaacdc815c1',
+    available: false,
+  },
+  {
+    name: 'Desk 44',
+    furnitureId: 'c0ce4660-db3c-4536-a582-a3fa21fb837b',
+    available: true,
+  },
+  {
+    name: 'Desk 45',
+    furnitureId: '726188e9-871f-4055-b06f-b1b313347a54',
+    available: false,
+  },
+  {
+    name: 'Desk 46',
+    furnitureId: '19bbf74f-7a45-4d1e-9dfc-73df0591e8cd',
+    available: false,
+  },
+  {
+    name: 'Desk 47',
+    furnitureId: '1ad658c2-fa3e-4304-98de-806b738eb865',
+    available: false,
+  },
+  {
+    name: 'Desk 48',
+    furnitureId: 'c4599091-037c-4e56-a3e0-88e65e07725e',
+    available: false,
+  },
+  {
+    name: 'Desk 49',
+    furnitureId: 'f3ad45b6-8948-455b-84f7-bceb105c1ad3',
+    available: false,
+  },
+  {
+    name: 'Desk 50',
+    furnitureId: '0ee7f143-9789-4a37-8c26-bd0aae932c67',
+    available: false,
+  },
+  {
+    name: 'Desk 51',
+    furnitureId: '3adf620a-1170-4626-bcda-f14dc441d62f',
+    available: true,
+  },
+  {
+    name: 'Desk 52',
+    furnitureId: '65f0fec7-bb22-4774-a904-c82cfb595e88',
+    available: false,
+  },
+  {
+    name: 'Desk 53',
+    furnitureId: '387df2bd-9cec-4b90-ace6-ce5c393e1f0f',
+    available: true,
+  },
+  {
+    name: 'Desk 54',
+    furnitureId: '23d3d412-1026-4603-871a-3868a47d4c5c',
+    available: false,
+  },
+  {
+    name: 'Desk 55',
+    furnitureId: '5cfbc2d6-927e-4940-b1e6-585ef0c00237',
+    available: false,
+  },
+  {
+    name: 'Desk 56',
+    furnitureId: 'efbd1844-8c7d-4cd5-acfb-acf68182e7a7',
+    available: true,
+  },
+  {
+    name: 'Desk 57',
+    furnitureId: '6736bd29-e5d5-416e-84c9-b2afd9710f3c',
+    available: false,
+  },
+  {
+    name: 'Desk 58',
+    furnitureId: 'f56d1735-926b-4abe-be75-2b2070496e13',
+    available: false,
+  },
+  {
+    name: 'Desk 59',
+    furnitureId: '37f7422c-d161-4390-9a2d-38dccecc32ac',
+    available: true,
+  },
+  {
+    name: 'Desk 60',
+    furnitureId: '5ffc1ade-7a6f-4b0f-aed2-82a407a4bc71',
+    available: false,
+  },
+  {
+    name: 'Desk 61',
+    furnitureId: '844ce1f2-a16d-4d90-bc0a-8c0ce561e469',
+    available: false,
+  },
+  {
+    name: 'Desk 62',
+    furnitureId: 'd3de0890-52d1-455a-ba21-8d3a44b2f5d4',
+    available: false,
+  },
+];
+вот этот пример для отображения тултипов - то есть если навести на комнату появится тултип с действием. - import React, { useState, useCallback, useEffect, FC, useRef } from 'react';
+import { render } from 'react-dom';
+import { Button, Checkbox, Divider, message, Radio, Statistic } from 'antd';
+import numeral from 'numeral';
+import 'antd/dist/antd.css';
+import { Smplr, Space } from '@smplrspace/smplr-loader';
+import { A } from '@mobily/ts-belt';
+
+import { SpaceViewer } from './SpaceViewer';
+import { Tooltip } from './Tooltip';
+
+import { Room, rooms } from './data';
+import { IdSet } from './types';
+
+import './style.css';
+
+message.config({
+  top: 32,
+});
+
+const IDS: IdSet = {
+  prod: {
+    env: 'prod',
+    spaceId: '7026783c-d8e0-4c92-b03a-ee203251c411',
+    clientToken: 'pub_4fda7bdd6a4d465c9fc615cbcd0b2aad',
+    organizationId: '99e1d0c3-ae44-4316-8f1b-9d7009012eb5',
+  },
+  dev: {
+    env: 'dev',
+    spaceId: 'dd2044a3-b6f3-4d27-b1c0-d8c8f4639b2f',
+    clientToken: 'pub_d3d112d5391f404b92f7e3a8fea8f5ec',
+    organizationId: 'e135b0c8-cac2-4e43-be3c-3d2733442206',
+  },
+};
+const ENV = 'dev';
+
+const methodDescription = {
+  Basic: 'Simple text tooltip, like in the 90s',
+  HTML: 'Provide a string (tip: use a template literal string) that is sanitized to HTML',
+  Handlebars: 'Handlebars template applied with hovered data element as value',
+  Custom:
+    'You take control of the tooltips completely, and rely on hover in/out events to display and position them',
+  Programmatic:
+    'Same as Custom, but you control the tooltips programmatically instead of using hover events',
+};
+
+type TooltipMode = 'Basic' | 'HTML' | 'Handlebars' | 'Custom' | 'Programmatic';
+type CustomTooltip = (Room & { top: number; left: number }) | null;
+
+const App: FC = () => {
+  const [space, setSpace] = useState<Space>();
+  const [smplr, setSmplr] = useState<Smplr>();
+
+  const [customContainerStyle, setCustomContainerStyle] = useState(false);
+  const [persistentTooltip, setPersistentTooltip] = useState(false);
+  const [tooltipMethod, setTooltipMethod] = useState<TooltipMode>('Basic');
+  const [customTooltip, setCustomTooltip] = useState<CustomTooltip>(null);
+
+  // state for Programmatic tooltip
+  const ProgrammaticTooltipIndex = useRef(0);
+  const repositionProgrammaticTooltip = useRef<() => void>(() => {});
+  const [hideProgrammaticTooltip, setHideProgrammaticTooltip] = useState(true);
+
+  // memoize so Viewer render once only (wrapped in memo)
+  const onReady = useCallback((space, smplr) => {
+    setSpace(space);
+    setSmplr(smplr);
+    message.info('Hover over the rooms to test the tooltips.', 3);
+  }, []);
+
+  // render elements
+  useEffect(() => {
+    if (!space || !smplr) {
+      return;
+    }
+    const customContainerCss =
+      'background-color: pink; border: solid 1px palevioletred;';
+    switch (tooltipMethod) {
+      case 'Basic':
+        space.addDataLayer({
+          id: 'rooms',
+          type: 'polygon',
+          data: persistentTooltip ? A.take(rooms, 3) : rooms,
+          color: (d) =>
+            smplr.Color.numericScale({
+              name: smplr.Color.NumericScale.Purples,
+              padding: [0.3, 0],
+            })(d.occupancyRate),
+          alpha: 0.8,
+          height: 2.9,
+          tooltip: (d) =>
+            `${d.name} - ${numeral(d.occupancyRate).format(
+              '0.0%'
+            )} (text only)`,
+          tooltipContainerStyle: customContainerStyle
+            ? customContainerCss
+            : undefined,
+          persistentTooltip,
+        });
+        break;
+      case 'HTML':
+        space.addDataLayer({
+          id: 'rooms',
+          type: 'polygon',
+          data: persistentTooltip ? A.take(rooms, 3) : rooms,
+          color: (d) =>
+            smplr.Color.numericScale({
+              name: smplr.Color.NumericScale.Blues,
+              padding: [0.3, 0],
+            })(d.occupancyRate),
+          alpha: 0.8,
+          height: 2.9,
+          tooltip: (d) =>
+            `<div style="display: flex; flex-direction: column; padding: 0.2em 0.4em;">
+              <h3 style="padding-bottom: 2px; margin-bottom: 8px; border-bottom: solid 1px #ececec;">${
+                d.name
+              }</h3>
+              <span style="
+                display: flex;
+                align-items: center;
+                width: fit-content;
+                height: 18px;
+                background-color: ${
+                  d.status === 'available' ? 'rgb(135, 208, 104)' : '#f50'
+                }; 
+                color: white; 
+                border-radius: 4px; 
+                padding: 0 8px;
+                font-size: 8.5pt;
+              ">${d.status}</span>
+              <span style="margin-top: 4px">Occupancy: ${numeral(
+                d.occupancyRate
+              ).format('0.0%')}</span>
+              <img
+              src="https://pub-ae2ae64171684380b5df4b44d0f34bab.r2.dev/meeting-room-photo.png"
+              style="
+                width: 140px;
+                height: 88px;
+                object-fit: cover;
+                border-radius: 2px;
+                margin: 8px 0;
+                "
+              />
+              <em style="color: #bababa; font-size: 8.5pt;">(HTML)</em>
+            </div>`,
+          tooltipContainerStyle: customContainerStyle
+            ? customContainerCss
+            : undefined,
+          persistentTooltip,
+        });
+        break;
+      case 'Handlebars':
+        space.addDataLayer({
+          id: 'rooms',
+          type: 'polygon',
+          data: persistentTooltip ? A.take(rooms, 3) : rooms,
+          color: (d) =>
+            smplr.Color.numericScale({
+              name: smplr.Color.NumericScale.Greens,
+              padding: [0.3, 0],
+            })(d.occupancyRate),
+          alpha: 0.8,
+          height: 2.9,
+          tooltipTemplate: `<div style="display: flex; flex-direction: column; padding: 0.2em 0.4em;">
+              <h3 style="padding-bottom: 2px; margin-bottom: 8px; border-bottom: solid 1px #ececec;">{{name}}</h3>
+              <span style="
+                display: flex;
+                align-items: center;
+                width: fit-content;
+                height: 18px;
+                background-color: #fafafa; 
+                border: 1px solid #d9d9d9;
+                color: rgba(0,0,0,.65); 
+                border-radius: 4px; 
+                padding: 0 8px;
+                font-size: 8.5pt;
+              ">{{status}}</span>
+              <span style="margin-top: 4px">Occupancy: {{formatNumber occupancyRate "0.0%"}}</span>
+              <img
+                src="https://pub-ae2ae64171684380b5df4b44d0f34bab.r2.dev/meeting-room-photo.png"
+                style="
+                  width: 140px;
+                  height: 88px;
+                  object-fit: cover;
+                  border-radius: 2px;
+                  margin: 8px 0;
+                "
+              />
+              <em style="color: #bababa; font-size: 8.5pt;">(templated)</em>
+            </div>`,
+          tooltipContainerStyle: customContainerStyle
+            ? customContainerCss
+            : undefined,
+          persistentTooltip,
+        });
+        break;
+      case 'Custom':
+        space.addDataLayer({
+          id: 'rooms',
+          type: 'polygon',
+          data: rooms,
+          color: (d) =>
+            smplr.Color.numericScale({
+              name: smplr.Color.NumericScale.Oranges,
+              padding: [0.3, 0],
+            })(d.occupancyRate),
+          alpha: 0.8,
+          height: 2.9,
+          onHover: (d, e) =>
+            setCustomTooltip({ ...d, top: e.pointerY, left: e.pointerX }),
+          onHoverOut: () => setCustomTooltip(null),
+        });
+        break;
+      case 'Programmatic':
+        const layerController = space.addDataLayer({
+          id: 'rooms',
+          type: 'polygon',
+          data: rooms,
+          color: (d) =>
+            smplr.Color.numericScale({
+              name: smplr.Color.NumericScale.Reds,
+              padding: [0.3, 0],
+            })(d.occupancyRate),
+          alpha: 0.8,
+          height: 2.9,
+        });
+        setHideProgrammaticTooltip(false);
+        // position the tooltip
+        repositionProgrammaticTooltip.current = () => {
+          const tooltipElement = rooms[ProgrammaticTooltipIndex.current];
+          const elementPosition = layerController.getElementPositionOnScreen(
+            tooltipElement.id
+          );
+          setCustomTooltip({
+            ...tooltipElement,
+            top: elementPosition.screenY,
+            left: elementPosition.screenX,
+          });
+        };
+        repositionProgrammaticTooltip.current();
+        // rotate tooltip element every 2 seconds
+        // rotate between 3 first rooms (because why not)
+        const nextTooltip = () => {
+          ProgrammaticTooltipIndex.current =
+            (ProgrammaticTooltipIndex.current + 1) % 3;
+          repositionProgrammaticTooltip.current();
+        };
+        const intervalId = window.setInterval(nextTooltip, 2000);
+        // hide tooltip when the camera moves
+        space.addEventListener('CameraStartedMoving', () => {
+          setHideProgrammaticTooltip(true);
+        });
+        space.addEventListener('CameraStoppedMoving', () => {
+          repositionProgrammaticTooltip.current();
+          setHideProgrammaticTooltip(false);
+        });
+        // clear background tasks when we exit this mode
+        return () => {
+          setCustomTooltip(null);
+          setHideProgrammaticTooltip(true);
+          window.clearInterval(intervalId);
+          space.clearEventListeners('CameraStartedMoving');
+          space.clearEventListeners('CameraStoppedMoving');
+        };
+    }
+  }, [space, smplr, tooltipMethod, customContainerStyle, persistentTooltip]);
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', padding: '1rem' }}>
+      <div className="smplr-wrapper">
+        <SpaceViewer
+          {...IDS[ENV]}
+          onReady={onReady}
+          onResize={() => repositionProgrammaticTooltip.current()} // only used for Programmatic tooltips
+        />
+        {customTooltip &&
+          (tooltipMethod === 'Custom' ||
+            (tooltipMethod === 'Programmatic' && !hideProgrammaticTooltip)) && (
+            <Tooltip top={customTooltip.top} left={customTooltip.left}>
+              <h3>{customTooltip.name}</h3>
+              <Divider style={{ margin: '0 0 1em 0' }} />
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  width: 300,
+                }}
+              >
+                <div>
+                  <Statistic
+                    title="Occupancy rate"
+                    value={numeral(customTooltip.occupancyRate).format('0.0%')}
+                  />
+                  <Button
+                    type="primary"
+                    onClick={() => message.success('Impressive! 🎉')}
+                    style={{ marginTop: 12 }}
+                  >
+                    Do something
+                  </Button>
+                </div>
+                <img
+                  src="https://pub-ae2ae64171684380b5df4b44d0f34bab.r2.dev/meeting-room-photo.png"
+                  style={{
+                    width: 160,
+                    height: 110,
+                    objectFit: 'cover',
+                    borderRadius: '4px',
+                  }}
+                />
+              </div>
+              <div style={{ marginTop: '0.5em' }}>
+                <em
+                  style={{
+                    color: '#bababa',
+                    fontSize: '8.5pt',
+                  }}
+                >
+                  (custom react component)
+                </em>
+              </div>
+            </Tooltip>
+          )}
+      </div>
+      <h3 style={{ marginTop: '1em' }}>All the ways to use tooltips</h3>
+      {!space ? (
+        <p>Please start the viewer</p>
+      ) : (
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            marginBottom: '20px',
+          }}
+        >
+          <div style={{ flexDirection: 'row' }}>
+            <Radio.Group
+              value={tooltipMethod}
+              onChange={(e) => setTooltipMethod(e.target.value)}
+              buttonStyle="solid"
+              size="small"
+            >
+              <Radio.Button value="Basic">Basic</Radio.Button>
+              <Radio.Button value="HTML">HTML</Radio.Button>
+              <Radio.Button value="Handlebars">Handlebars</Radio.Button>
+            </Radio.Group>
+            <span style={{ marginLeft: '0.5em' }} />
+            <Radio.Group
+              value={tooltipMethod}
+              onChange={(e) => setTooltipMethod(e.target.value)}
+              buttonStyle="solid"
+              size="small"
+            >
+              <Radio.Button value="Custom">Custom</Radio.Button>
+              <Radio.Button value="Programmatic">Programmatic</Radio.Button>
+            </Radio.Group>
+          </div>
+          <div style={{ marginTop: '.5em' }}>
+            <span style={{ fontFamily: 'RNSSanz-Bold' }}>{tooltipMethod}</span>:{' '}
+            {methodDescription[tooltipMethod]}
+          </div>
+          <div style={{ marginTop: '1.3em' }} />
+          <Checkbox
+            checked={customContainerStyle}
+            onChange={(e) => setCustomContainerStyle(e.target.checked)}
+            disabled={
+              tooltipMethod === 'Custom' || tooltipMethod === 'Programmatic'
+            }
+          >
+            Apply custom CSS to container
+          </Checkbox>
+          <div style={{ marginTop: '.3em' }} />
+          <Checkbox
+            checked={persistentTooltip}
+            onChange={(e) => setPersistentTooltip(e.target.checked)}
+            disabled={
+              tooltipMethod === 'Custom' || tooltipMethod === 'Programmatic'
+            }
+          >
+            Try always on screen (persistent) tooltips
+          </Checkbox>
+          <div style={{ marginTop: '1.3em' }} />
+          <p>
+            Try changing the settings above and see how the tooltips change.
+            <br />
+            Then check the code that implements each mode.
+          </p>
+        </div>
+      )}
+    </div>
+  );
+};
+
+render(<App />, document.getElementById('root'));
+ import { UnknownData } from '@smplrspace/smplr-loader';
+
+export interface Room extends UnknownData {
+  name: string;
+  occupancyRate: number;
+  status: 'occupied' | 'available';
+}
+
+export const rooms: Room[] = [
+  {
+    id: 'b82c8318-b6b5-43e3-8b52-2ba520352824',
+    name: 'Room HDP',
+    occupancyRate: 0.72,
+    status: 'available',
+    coordinates: [
+      {
+        x: 126.56182983036348,
+        z: -52.999884411043816,
+        levelIndex: 0,
+      },
+      {
+        x: 128.14825806189657,
+        z: -52.991241423129665,
+        levelIndex: 0,
+      },
+      {
+        x: 128.12411728939838,
+        z: -53.377928800582886,
+        levelIndex: 0,
+      },
+      {
+        x: 130.56109896960538,
+        z: -53.38023885693597,
+        levelIndex: 0,
+      },
+      {
+        x: 130.53542284745635,
+        z: -55.3104064778142,
+        levelIndex: 0,
+      },
+      {
+        x: 126.59003937487105,
+        z: -55.338255139844385,
+        levelIndex: 0,
+      },
+    ],
+  },
+  {
+    id: 'b82c8318-b6b5-43e3-8b52-2ba529552824',
+    name: 'Room ZSA',
+    occupancyRate: 0.75,
+    status: 'available',
+    coordinates: [
+      {
+        levelIndex: 0,
+        x: 109.51213091718287,
+        z: -52.72421535276899,
+      },
+      {
+        levelIndex: 0,
+        x: 113.30611479546066,
+        z: -52.825351129015814,
+      },
+      {
+        levelIndex: 0,
+        x: 113.27274733574254,
+        z: -49.058050368851674,
+      },
+      {
+        levelIndex: 0,
+        x: 109.48848956782827,
+        z: -49.05750778733213,
+      },
+    ],
+  },
+  {
+    id: 'b82c2318-b6b5-43e3-8b52-2ba520352824',
+    name: 'Room LPO',
+    occupancyRate: 0.9,
+    status: 'occupied',
+    coordinates: [
+      {
+        levelIndex: 0,
+        x: 100.09959747626148,
+        z: -39.39244621620904,
+      },
+      {
+        levelIndex: 0,
+        x: 102.6580965385939,
+        z: -39.37598191272101,
+      },
+      {
+        levelIndex: 0,
+        x: 102.6191283978407,
+        z: -43.534368133570986,
+      },
+      {
+        levelIndex: 0,
+        x: 100.09897116328753,
+        z: -43.54545451186441,
+      },
+    ],
+  },
+  {
+    id: 'c92d5ab7-ed65-5e01-9bb1-87c3936f91b7',
+    name: 'Room HGT',
+    occupancyRate: 0.2,
+    status: 'available',
+    coordinates: [
+      {
+        levelIndex: 0,
+        x: 113.2801722774386,
+        z: -42.83219086225655,
+      },
+      {
+        levelIndex: 0,
+        x: 113.3193132181863,
+        z: -46.13428191699415,
+      },
+      {
+        levelIndex: 0,
+        x: 109.62619601948568,
+        z: -46.15225737265839,
+      },
+      {
+        levelIndex: 0,
+        x: 109.60578443011347,
+        z: -42.73219086225655,
+      },
+    ],
+  },
+  {
+    id: '2807709b-540f-4e4b-b88c-fdfa472b3cfb',
+    name: 'Room SKD',
+    occupancyRate: 0.7,
+    status: 'available',
+    coordinates: [
+      {
+        x: 110.35884428135748,
+        z: -35.2199694765972,
+        levelIndex: 0,
+      },
+      {
+        x: 113.11054183475528,
+        z: -35.22226288162949,
+        levelIndex: 0,
+      },
+      {
+        x: 113.12001640649788,
+        z: -37.84992195888173,
+        levelIndex: 0,
+      },
+      {
+        x: 110.21543732497793,
+        z: -37.95196409254887,
+        levelIndex: 0,
+      },
+    ],
+  },
+  {
+    id: 'c92d5ab7-ed65-5e01-9bb1-87c3936f91d7',
+    name: 'Room TLO',
+    occupancyRate: 0.1,
+    status: 'available',
+    coordinates: [
+      {
+        levelIndex: 0,
+        x: 105.41225969863186,
+        z: -42.7213826191021,
+      },
+      {
+        levelIndex: 0,
+        x: 109.36155099975761,
+        z: -42.7052582251894,
+      },
+      {
+        levelIndex: 0,
+        x: 109.32495816699252,
+        z: -46.160488439300806,
+      },
+      {
+        levelIndex: 0,
+        x: 105.36033740642809,
+        z: -46.14537667512589,
+      },
+    ],
+  },
+  {
+    name: 'Room FRE',
+    occupancyRate: 0.3,
+    status: 'occupied',
+    coordinates: [
+      {
+        levelIndex: 0,
+        x: 109.29433288416432,
+        z: -49.0315686772098,
+      },
+      {
+        levelIndex: 0,
+        x: 109.32929356565502,
+        z: -52.902551773663355,
+      },
+      {
+        levelIndex: 0,
+        x: 105.39005057474789,
+        z: -52.83494281839484,
+      },
+      {
+        levelIndex: 0,
+        x: 105.388980376126,
+        z: -49.04451866639253,
+      },
+    ],
+  },
+  {
+    name: 'Room HFD',
+    occupancyRate: 0.5,
+    status: 'available',
+    coordinates: [
+      {
+        levelIndex: 0,
+        x: 103.3021673228402,
+        z: -55.30744733197535,
+      },
+      {
+        levelIndex: 0,
+        x: 106.98378309919396,
+        z: -55.32464420990853,
+      },
+      {
+        levelIndex: 0,
+        x: 106.96769841836884,
+        z: -53.003036971318515,
+      },
+      {
+        levelIndex: 0,
+        x: 103.31951774723582,
+        z: -52.99481752328292,
+      },
+    ],
+  },
+  {
+    name: 'Room JKI',
+    occupancyRate: 0.1,
+    status: 'available',
+    coordinates: [
+      {
+        levelIndex: 0,
+        x: 113.26636069684801,
+        z: -33.97442198515572,
+      },
+      {
+        levelIndex: 0,
+        x: 116.89540335747016,
+        z: -33.99691876326959,
+      },
+      {
+        levelIndex: 0,
+        x: 116.90512034838599,
+        z: -37.92712199474917,
+      },
+      {
+        levelIndex: 0,
+        x: 113.27465782966509,
+        z: -37.96008342461563,
+      },
+    ],
+  },
+  {
+    name: 'Room HTI',
+    occupancyRate: 0.8,
+    status: 'occupied',
+    coordinates: [
+      {
+        levelIndex: 0,
+        x: 117.09961417515864,
+        z: -34.003499604762524,
+      },
+      {
+        levelIndex: 0,
+        x: 120.24356200663668,
+        z: -34.00303660174071,
+      },
+      {
+        levelIndex: 0,
+        x: 120.23861330045554,
+        z: -37.9408917470153,
+      },
+      {
+        levelIndex: 0,
+        x: 117.05230618579805,
+        z: -37.96164551218503,
+      },
+    ],
+  },
+  {
+    name: 'Room DSQ',
+    occupancyRate: 0.7,
+    status: 'occupied',
+    coordinates: [
+      {
+        levelIndex: 0,
+        x: 120.39227624013998,
+        z: -37.96894822648001,
+      },
+      {
+        levelIndex: 0,
+        x: 120.38861330045555,
+        z: -35.23213974548155,
+      },
+      {
+        levelIndex: 0,
+        x: 123.28676045662353,
+        z: -35.22644565205433,
+      },
+      {
+        levelIndex: 0,
+        x: 123.28850715749962,
+        z: -37.97067592393823,
+      },
+    ],
+  },
+  {
+    name: 'Room LLK',
+    occupancyRate: 0.6,
+    status: 'available',
+    coordinates: [
+      {
+        levelIndex: 0,
+        x: 124.71300083132081,
+        z: -46.14305961020384,
+      },
+      {
+        levelIndex: 0,
+        x: 120.38861330045555,
+        z: -46.133644442906856,
+      },
+      {
+        levelIndex: 0,
+        x: 120.45705088313703,
+        z: -42.78134290974867,
+      },
+      {
+        levelIndex: 0,
+        x: 124.73773161112017,
+        z: -42.78297164965507,
+      },
+    ],
+  },
+  {
+    name: 'Room OPH',
+    occupancyRate: 0.3,
+    status: 'available',
+    coordinates: [
+      {
+        levelIndex: 0,
+        x: 128.25914143357824,
+        z: -46.13116261291459,
+      },
+      {
+        levelIndex: 0,
+        x: 124.92370359430835,
+        z: -46.116788929706345,
+      },
+      {
+        levelIndex: 0,
+        x: 124.93274840573581,
+        z: -42.77155956370133,
+      },
+      {
+        levelIndex: 0,
+        x: 128.26004556492774,
+        z: -42.7646573721146,
+      },
+    ],
+  },
+  {
+    name: 'Room HUT',
+    occupancyRate: 0.8,
+    status: 'occupied',
+    coordinates: [
+      {
+        levelIndex: 0,
+        x: 120.39841726628364,
+        z: -52.82421520467359,
+      },
+      {
+        levelIndex: 0,
+        x: 120.4264979154565,
+        z: -49.011479651725395,
+      },
+      {
+        levelIndex: 0,
+        x: 124.75319768809065,
+        z: -49.078672004249064,
+      },
+      {
+        levelIndex: 0,
+        x: 124.73962462692302,
+        z: -52.78082801205187,
+      },
+    ],
+  },
+  {
+    name: 'Room K34',
+    occupancyRate: 0.05,
+    status: 'available',
+    coordinates: [
+      {
+        levelIndex: 0,
+        x: 128.25032153554096,
+        z: -52.82421520467359,
+      },
+      {
+        levelIndex: 0,
+        x: 124.86404166304999,
+        z: -52.8407853683852,
+      },
+      {
+        levelIndex: 0,
+        x: 124.9152652477972,
+        z: -49.07913371360444,
+      },
+      {
+        levelIndex: 0,
+        x: 128.2591417183888,
+        z: -49.07387728811944,
+      },
+    ],
+  },
+];, import * as React from 'react';
+import { FC, useEffect } from 'react';
+import { loadSmplrJs } from '@smplrspace/smplr-loader';
+
+import { SpaceViewerProps } from './types';
+
+export const SpaceViewer: FC<SpaceViewerProps> = ({
+  env,
+  spaceId,
+  clientToken,
+  onReady,
+  onResize,
+}) => {
+  useEffect(() => {
+    // we recommend using the default value 'esm' in your code but stackblitz required 'umd'
+    loadSmplrJs('umd', env)
+      .then((smplr) => {
+        const space = new smplr.Space({
+          spaceId,
+          clientToken,
+          containerId: 'younameit',
+        });
+        space.startViewer({
+          preview: false,
+          allowModeChange: true,
+          onReady: () => onReady(space, smplr),
+          onError: (error) => console.error('Could not start viewer', error),
+          onResize,
+        });
+      })
+      .catch((error) => console.error(error));
+  }, []);
+
+  return <div id="younameit" className="smplr-embed"></div>;
+};import React, { FC } from 'react';
+
+export const Tooltip: FC<{ top: number; left: number }> = ({
+  top,
+  left,
+  children,
+}) => (
+  <div
+    style={{
+      position: 'absolute',
+      top,
+      left,
+      background: 'white',
+      border: 'solid 1px lightgrey',
+      padding: '0.8em 1.2em',
+    }}
+  >
+    {children}
+  </div>
+);
+а также есть вот такой пример - Car park - React
+This example demonstrates a few things:
+
+Thin polygon layers to showcase spot availability
+Icon layers to highlight electric charging & wheelchair access
+Dynamic color icons to highlight vallet parking tiers and paid time left, import * as React from 'react';
+import { FC, useEffect, useState } from 'react';
+import { loadSmplrJs, Smplr, Space } from '@smplrspace/smplr-loader';
+import { A, F, pipe } from '@mobily/ts-belt';
+
+import { Slots, slots, elecSlots, wheelchairSlots } from './data';
+
+const env = 'dev';
+const creds = {
+  prod: {
+    spaceId: 'spc_w6f17mph',
+    clientToken: 'pub_fed02b37721d4a138c873cd7567fbe04',
+    organizationId: '44532862-5659-40ed-bcc4-db6738acdab4',
+  },
+  dev: {
+    spaceId: 'spc_kxqv5amr',
+    clientToken: 'pub_d3d112d5391f404b92f7e3a8fea8f5ec',
+    organizationId: 'e135b0c8-cac2-4e43-be3c-3d2733442206',
+  },
+};
+
+export const SpaceViewer: FC = () => {
+  const smplrRef = React.useRef<Smplr>();
+  const spaceRef = React.useRef<Space>();
+
+  const [viewerReady, setViewerReady] = useState(false);
+
+  // start viewer
+  useEffect(() => {
+    // we recommend using the default value 'esm' in your code but stackblitz required 'umd'
+    loadSmplrJs('umd', env)
+      .then((smplr) => {
+        smplrRef.current = smplr;
+        spaceRef.current = new smplr.Space({
+          ...creds[env],
+          containerId: 'test',
+        });
+        spaceRef.current.startViewer({
+          preview: false,
+          allowModeChange: true,
+          onReady: () => setViewerReady(true),
+          onError: (error) => console.error('Could not start viewer', error),
+          renderOptions: {
+            backgroundColor: '#DCE2E7',
+          },
+        });
+      })
+      .catch((error) => console.error(error));
+  }, []);
+
+  // show data when viewer ready
+  useEffect(() => {
+    if (!viewerReady) {
+      return;
+    }
+    // prep smplrClient to compute polygon centers
+    const smplrClient = new smplrRef.current.QueryClient(creds[env]);
+
+    // render slots availability
+    spaceRef.current.addPolygonDataLayer<Slots>({
+      id: 'slots',
+      data: slots,
+      tooltip: (d) => `${d.name} - ${d.occupied ? 'Occupied' : 'Available'}`,
+      color: (d) => (d.occupied ? '#E74157' : '#48B695'),
+      alpha: 0.6,
+      height: 0.22,
+    });
+
+    // render elec charging points
+    const elecChargingSlots = pipe(
+      slots,
+      A.filter((s) => A.includes(elecSlots, s.name)),
+      A.map((s) => ({
+        ...s,
+        position: {
+          ...smplrClient.getPolygonCenter({ polygon: s.coordinates }),
+          elevation: 2,
+        },
+      })),
+      F.toMutable
+    );
+    spaceRef.current?.addIconDataLayer({
+      id: 'electric',
+      data: elecChargingSlots,
+      icon: {
+        url: 'https://webshare.smplrspace.io/electric.png',
+        width: 512,
+        height: 512,
+      },
+      width: 3,
+    });
+
+    // render wheelchair access slots
+    const wheelchairAccessSlots = pipe(
+      slots,
+      A.filter((s) => A.includes(wheelchairSlots, s.name)),
+      A.map((s) => ({
+        ...s,
+        position: {
+          ...smplrClient.getPolygonCenter({ polygon: s.coordinates }),
+          elevation: 2,
+        },
+      })),
+      F.toMutable
+    );
+    spaceRef.current?.addIconDataLayer({
+      id: 'wheelchair',
+      data: wheelchairAccessSlots,
+      icon: {
+        url: 'https://webshare.smplrspace.io/wheelchair.png',
+        width: 512,
+        height: 512,
+      },
+      width: 3,
+    });
+
+    // vallet parking
+    // * random data from the occupied slots
+    // * statistically 40% are VIP status
+    // * time left random
+    const valletSlots = pipe(
+      slots,
+      A.filter(
+        (s) =>
+          s.occupied &&
+          !A.includes(wheelchairSlots, s.name) &&
+          !A.includes(elecSlots, s.name)
+      ),
+      A.shuffle,
+      A.take(20),
+      A.map((s) => ({
+        ...s,
+        position: {
+          ...smplrClient.getPolygonCenter({ polygon: s.coordinates }),
+          elevation: 2,
+        },
+        vip: Math.random() < 0.4,
+        minutesLeft: Math.random() * 120,
+      })),
+      F.toMutable
+    );
+    const colorScale = smplrRef.current.Color.numericScale({
+      name: smplrRef.current.Color.NumericScale.YlOrRd,
+      domain: [0, 120],
+      padding: 0.1,
+      brighten: 1,
+    });
+    spaceRef.current?.addIconDataLayer({
+      id: 'vallet',
+      data: valletSlots,
+      icon: (d) =>
+        d.vip
+          ? {
+              url: 'https://webshare.smplrspace.io/crown-icon.png',
+              width: 512,
+              height: 512,
+            }
+          : {
+              url: 'https://webshare.smplrspace.io/user-icon.png',
+              width: 512,
+              height: 512,
+            },
+      width: 4,
+      colorOverlay: (d) => colorScale(d.minutesLeft),
+    });
+
+    // cleanup
+    return () => {
+      spaceRef.current.removeDataLayer('slots');
+      spaceRef.current.removeDataLayer('electric');
+      spaceRef.current.removeDataLayer('wheelchair');
+      spaceRef.current.removeDataLayer('vallet');
+    };
+  }, [viewerReady]);
+
+  // render
+  return (
+    <div className="smplr-wrapper">
+      <div id="test" className="smplr-embed"></div>
+    </div>
+  );
+};
+с такими даными - import { UnknownData } from '@smplrspace/smplr-loader';
+
+export const wheelchairSlots = [
+  'L1 - 12',
+  'L1 - 13',
+  'L1 - 14',
+  'L1 - 15',
+  'L2 - 12',
+  'L2 - 13',
+  'L2 - 14',
+  'L2 - 15',
+  'L3 - 12',
+  'L3 - 13',
+  'L3 - 14',
+  'L3 - 15',
+  'L4 - 12',
+  'L4 - 13',
+  'L4 - 14',
+  'L4 - 15',
+];
+
+export const elecSlots = [
+  'L1 - 158',
+  'L1 - 159',
+  'L1 - 160',
+  'L1 - 161',
+  'L2 - 158',
+  'L2 - 159',
+  'L2 - 160',
+  'L2 - 161',
+  'L3 - 158',
+  'L3 - 159',
+  'L3 - 160',
+  'L3 - 161',
+  'L4 - 158',
+  'L4 - 159',
+  'L4 - 160',
+  'L4 - 161',
+];
+
+export interface Slots extends UnknownData {
+  name: string;
+  occupied: boolean;
+}
+
+export const slots = [
+  {
+    id: '23640b02-7768-467c-af81-6e46719f300b',
+    name: 'L1 - 43',
+    occupied: true,
+    levelIndex: 0,
+    coordinates: [
+      {
+        x: 112.98831503077916,
+        z: -80.8960422525036,
+        levelIndex: 0,
+      },
+      {
+        x: 112.91791540334671,
+        z: -75.0604485948659,
+        levelIndex: 0,
+      },
+      {
+        x: 110.30058910420802,
+        z: -75.06815770944692,
+        levelIndex: 0,
+      },
+      {
+        x: 110.32004317817132,
+        z: -80.97533548961239,
+        levelIndex: 0,
+      },
+    ],
+  },
+  {
+    id: 'e20e6244-3b02-4c52-8c04-e18bdd24a047',
+    name: 'L1 - 42',
+    occupied: true,
+    levelIndex: 0,
+    coordinates: [
+      {
+        x: 110.04425738101226,
+        z: -80.93782697590265,
+        levelIndex: 0,
+      },
+      {
+        x: 107.43358280955441,
+        z: -80.96880597636282,
+        levelIndex: 0,
+      },
+      {
+        x: 107.46436836666476,
+        z: -75.07648593804713,
+        levelIndex: 0,
+      },
+      {
+        x: 110.04773928751725,
+        z: -75.04878296213722,
+        levelIndex: 0,
+      },
+    ],
+  },
+  {
+    id: '59fc9486-64fc-4899-8210-0b94857f02e0',
+    name: 'L1 - 41',
+    occupied: true,
+    levelIndex: 0,
+    coordinates: [
+      {
+        x: 107.24381816717225,
+        z: -80.99584817138214,
+        levelIndex: 0,
+      },
+      {
+        x: 104.9690269931096,
+        z: -81.00235186090987,
+        levelIndex: 0,
+      },
+      {
+        x: 104.97703419733604,
+        z: -75.07304073051556,
+        levelIndex: 0,
+      },
+      {
+        x: 107.25297006258306,
+        z: -75.0752563819163,
+        levelIndex: 0,
+      },
+    ],
+  },
+  {
+    id: '0bdbae60-f297-47d2-a3d1-6b052cae8df1',
+    name: 'L1 - 40',
+    occupied: true,
+    levelIndex: 0,
+    coordinates: [
+      {
+        x: 104.72998974285994,
+        z: -80.98122227051039,
+        levelIndex: 0,
+      },
+      {
+        x: 101.86248873392822,
+        z: -80.95189983991403,
+        levelIndex: 0,
+      },
+      {
+        x: 101.89818379601856,
+        z: -75.20260725786277,
+        levelIndex: 0,
+      },
+      {
+        x: 104.7601435926824,
+        z: -75.07865318031793,
+        levelIndex: 0,
+      },
+    ],import * as React from 'react';
+import { FC, useEffect, useState } from 'react';
+import { loadSmplrJs, Smplr, Space } from '@smplrspace/smplr-loader';
+import { A, F, pipe } from '@mobily/ts-belt';
+
+import { Slots, slots, elecSlots, wheelchairSlots } from './data';
+
+const env = 'dev';
+const creds = {
+  prod: {
+    spaceId: 'spc_w6f17mph',
+    clientToken: 'pub_fed02b37721d4a138c873cd7567fbe04',
+    organizationId: '44532862-5659-40ed-bcc4-db6738acdab4',
+  },
+  dev: {
+    spaceId: 'spc_kxqv5amr',
+    clientToken: 'pub_d3d112d5391f404b92f7e3a8fea8f5ec',
+    organizationId: 'e135b0c8-cac2-4e43-be3c-3d2733442206',
+  },
+};
+
+export const SpaceViewer: FC = () => {
+  const smplrRef = React.useRef<Smplr>();
+  const spaceRef = React.useRef<Space>();
+
+  const [viewerReady, setViewerReady] = useState(false);
+
+  // start viewer
+  useEffect(() => {
+    // we recommend using the default value 'esm' in your code but stackblitz required 'umd'
+    loadSmplrJs('umd', env)
+      .then((smplr) => {
+        smplrRef.current = smplr;
+        spaceRef.current = new smplr.Space({
+          ...creds[env],
+          containerId: 'test',
+        });
+        spaceRef.current.startViewer({
+          preview: false,
+          allowModeChange: true,
+          onReady: () => setViewerReady(true),
+          onError: (error) => console.error('Could not start viewer', error),
+          renderOptions: {
+            backgroundColor: '#DCE2E7',
+          },
+        });
+      })
+      .catch((error) => console.error(error));
+  }, []);
+
+  // show data when viewer ready
+  useEffect(() => {
+    if (!viewerReady) {
+      return;
+    }
+    // prep smplrClient to compute polygon centers
+    const smplrClient = new smplrRef.current.QueryClient(creds[env]);
+
+    // render slots availability
+    spaceRef.current.addPolygonDataLayer<Slots>({
+      id: 'slots',
+      data: slots,
+      tooltip: (d) => `${d.name} - ${d.occupied ? 'Occupied' : 'Available'}`,
+      color: (d) => (d.occupied ? '#E74157' : '#48B695'),
+      alpha: 0.6,
+      height: 0.22,
+    });
+
+    // render elec charging points
+    const elecChargingSlots = pipe(
+      slots,
+      A.filter((s) => A.includes(elecSlots, s.name)),
+      A.map((s) => ({
+        ...s,
+        position: {
+          ...smplrClient.getPolygonCenter({ polygon: s.coordinates }),
+          elevation: 2,
+        },
+      })),
+      F.toMutable
+    );
+    spaceRef.current?.addIconDataLayer({
+      id: 'electric',
+      data: elecChargingSlots,
+      icon: {
+        url: 'https://webshare.smplrspace.io/electric.png',
+        width: 512,
+        height: 512,
+      },
+      width: 3,
+    });
+
+    // render wheelchair access slots
+    const wheelchairAccessSlots = pipe(
+      slots,
+      A.filter((s) => A.includes(wheelchairSlots, s.name)),
+      A.map((s) => ({
+        ...s,
+        position: {
+          ...smplrClient.getPolygonCenter({ polygon: s.coordinates }),
+          elevation: 2,
+        },
+      })),
+      F.toMutable
+    );
+    spaceRef.current?.addIconDataLayer({
+      id: 'wheelchair',
+      data: wheelchairAccessSlots,
+      icon: {
+        url: 'https://webshare.smplrspace.io/wheelchair.png',
+        width: 512,
+        height: 512,
+      },
+      width: 3,
+    });
+
+    // vallet parking
+    // * random data from the occupied slots
+    // * statistically 40% are VIP status
+    // * time left random
+    const valletSlots = pipe(
+      slots,
+      A.filter(
+        (s) =>
+          s.occupied &&
+          !A.includes(wheelchairSlots, s.name) &&
+          !A.includes(elecSlots, s.name)
+      ),
+      A.shuffle,
+      A.take(20),
+      A.map((s) => ({
+        ...s,
+        position: {
+          ...smplrClient.getPolygonCenter({ polygon: s.coordinates }),
+          elevation: 2,
+        },
+        vip: Math.random() < 0.4,
+        minutesLeft: Math.random() * 120,
+      })),
+      F.toMutable
+    );
+    const colorScale = smplrRef.current.Color.numericScale({
+      name: smplrRef.current.Color.NumericScale.YlOrRd,
+      domain: [0, 120],
+      padding: 0.1,
+      brighten: 1,
+    });
+    spaceRef.current?.addIconDataLayer({
+      id: 'vallet',
+      data: valletSlots,
+      icon: (d) =>
+        d.vip
+          ? {
+              url: 'https://webshare.smplrspace.io/crown-icon.png',
+              width: 512,
+              height: 512,
+            }
+          : {
+              url: 'https://webshare.smplrspace.io/user-icon.png',
+              width: 512,
+              height: 512,
+            },
+      width: 4,
+      colorOverlay: (d) => colorScale(d.minutesLeft),
+    });
+
+    // cleanup
+    return () => {
+      spaceRef.current.removeDataLayer('slots');
+      spaceRef.current.removeDataLayer('electric');
+      spaceRef.current.removeDataLayer('wheelchair');
+      spaceRef.current.removeDataLayer('vallet');
+    };
+  }, [viewerReady]);
+
+  // render
+  return (
+    <div className="smplr-wrapper">
+      <div id="test" className="smplr-embed"></div>
+    </div>
+  );
+};
