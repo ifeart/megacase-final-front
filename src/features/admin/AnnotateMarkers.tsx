@@ -130,10 +130,10 @@ export const AnnotateMarkers: React.FC<Props> = ({ spaceId, onNext }) => {
             className="px-6 py-3 text-[16px] border border-gray-300 text-gray-700 hover:border-[#1daff7] hover:text-[#1daff7] transition-all duration-300 hover-lift"
             onClick={() => setPicking((v) => !v)}
           >
-            {picking ? "Ostanovit" : "Razmestit marker"}
+            {picking ? "Остановить" : "Разместить маркер"}
           </button>
           <div className="text-gray-500 text-[16px]">
-            Markerov: {list.length}
+            Маркеров: {list.length}
           </div>
           <div className="flex-1" />
           <button
@@ -196,13 +196,13 @@ export const AnnotateMarkers: React.FC<Props> = ({ spaceId, onNext }) => {
               }
             }}
           >
-            Izvlech geometriyu
+            Извлечь геометрию
           </button>
           <button
             className="px-6 py-3 text-[16px] primary-button hover-lift"
             onClick={onNext}
           >
-            Dalee
+            Далее
           </button>
         </div>
       </div>
@@ -211,14 +211,14 @@ export const AnnotateMarkers: React.FC<Props> = ({ spaceId, onNext }) => {
       <div className="fixed top-16 right-0 bottom-0 w-full max-w-sm z-40 glass-panel border-l-0 border-r-0">
         <div className="h-full flex flex-col">
           <div className="px-6 py-4 border-b border-gray-100 flex items-center gap-3">
-            <div className="text-[20px] font-medium text-black">Markery</div>
+            <div className="text-[20px] font-medium text-black">Маркеры</div>
             <div className="flex-1" />
             {selectedId && (
               <button
                 className="px-3 py-2 text-[14px] border border-gray-300 text-gray-700 hover:border-gray-400 transition-all duration-300"
                 onClick={() => setSelectedId(null)}
               >
-                Otmenit
+                Отменить
               </button>
             )}
           </div>
@@ -260,13 +260,13 @@ export const AnnotateMarkers: React.FC<Props> = ({ spaceId, onNext }) => {
                           })
                         }
                         onFocus={() => setSelectedId(m.id)}
-                        title="Tsvet markera"
+                        title="Цвет маркера"
                       />
                     </div>
                     {isSel && (
                       <div className="text-[12px] text-gray-500">
-                        Podskazka: peretaschite marker na stsene dlya
-                        peremescheniya.
+                        Подсказка: перетащите маркер на сцене для
+                        перемещения.
                       </div>
                     )}
                   </div>
