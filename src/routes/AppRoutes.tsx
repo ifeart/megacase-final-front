@@ -1,6 +1,14 @@
+import {
+	AnnotateRoute,
+	BookingRoute,
+	EditorRoute,
+	MapPlacementRoute,
+	ReviewRoute,
+	SearchEmployeesRoute,
+	SetupRoute,
+	UserProfileRoute
+} from '@/routes'
 import { Navigate, Route, Routes } from 'react-router-dom'
-import {AnnotateRoute, BookingRoute, EditorRoute, MapPlacementRoute, ReviewRoute, SetupRoute, SearchEmployeesRoute} from '@/routes'
-
 
 export function AppRoutes() {
 	return (
@@ -12,6 +20,7 @@ export function AppRoutes() {
 			<Route path='/map-placement/:spaceId' element={<MapPlacementRoute />} />
 			<Route path='/booking/:spaceId?' element={<BookingRoute />} />
 			<Route path='/search/employees' element={<SearchEmployeesRoute />} />
+			<Route path='/user/profile' element={<UserProfileRoute />} />
 			<Route path='/*' element={<Navigate to='/booking' />} />
 		</Routes>
 	)
