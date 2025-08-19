@@ -5,6 +5,8 @@ export default function InternalHeader() {
   const navigate = useNavigate();
   const canGoBack = loc.pathname !== "/setup";
 
+  const isAdmin = false;
+
   const handleGoBack = () => {
     if (loc.key !== "default") {
       navigate(-1);
@@ -43,12 +45,23 @@ export default function InternalHeader() {
           </Link>
           <span className="text-gray-300 select-none">///</span>
           <Link
-            to="/setup"
+            to="/find"
             className="text-[16px] underline-hover text-gray-600 cursor-pointer"
           >
-            Управление
+            Поиск
           </Link>
           <span className="text-gray-300 select-none">///</span>
+          {isAdmin && (
+            <>
+              <Link
+                to="/setap"
+                className="text-[16px] underline-hover text-gray-600 cursor-pointer"
+              >
+                Управление
+              </Link>
+              <span className="text-gray-300 select-none">///</span>
+            </>
+          )}
           <Link
             to="/profile"
             className="text-[16px] underline-hover text-gray-600 cursor-pointer"

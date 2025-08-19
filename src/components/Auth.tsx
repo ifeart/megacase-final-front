@@ -1,4 +1,6 @@
 import React, { useState } from "react";
+import { ROLES, type User } from "@/types";
+import { useAuth } from "@/context/AuthContext";
 
 interface AuthProps {
   isVisible: boolean;
@@ -7,43 +9,103 @@ interface AuthProps {
 }
 
 type AuthMode = "login" | "register" | "role-select";
-type UserRole = "admin" | "user" | "superadmin";
+type UserRole = keyof typeof ROLES;
+
+interface FormData {
+  email: string;
+  password: string;
+  firstName?: string;
+  lastName?: string;
+}
 
 const Auth: React.FC<AuthProps> = ({ isVisible, onClose, onAuthComplete }) => {
+  const { login } = useAuth();
   const [authMode, setAuthMode] = useState<AuthMode>("login");
   const [selectedRole, setSelectedRole] = useState<UserRole | null>(null);
+  const [formData, setFormData] = useState<FormData>({
+    email: "",
+    password: "",
+    firstName: "",
+    lastName: "",
+  });
+  const [error, setError] = useState<string>("");
 
-  const handleLoginSubmit = () => {
-    // Здесь будет логика авторизации
-    // Пока просто вызываем onAuthComplete
-    onAuthComplete?.();
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+    setError(""); // Очищаем ошибку при изменении данных
+  };
+
+  const handleLoginSubmit = async () => {
+    try {
+      const result = await login(formData.email, formData.password);
+      if (result) {
+        onAuthComplete?.();
+      } else {
+        setError("Неверный email или пароль");
+      }
+    } catch (error) {
+      setError("Ошибка при входе");
+    }
   };
 
   const handleRegisterComplete = () => {
-    // После создания аккаунта тоже переходим к системе
-    onAuthComplete?.();
+    // Создаем нового пользователя
+    const newUser: User = {
+      id: Date.now().toString(), // В реальном приложении ID будет генерироваться на бэкенде
+      name: `${formData.firstName} ${formData.lastName}`.trim(),
+      email: formData.email,
+      role: selectedRole as UserRole,
+      permissions: {
+        projectIds: [],
+        workspaceIds: [],
+      },
+    };
+
+    // Сохраняем пользователя в localStorage
+    const existingUsers = JSON.parse(
+      localStorage.getItem("registered_users") || "[]"
+    );
+    localStorage.setItem(
+      "registered_users",
+      JSON.stringify([...existingUsers, newUser])
+    );
+
+    // Автоматически логиним нового пользователя
+    login(formData.email, formData.password).then(() => {
+      onAuthComplete?.();
+    });
   };
 
   const roles = [
     {
-      id: "user" as UserRole,
+      id: ROLES.USER,
       title: "User",
-      subtitle: "Standard access",
-      description: "Perfect for everyday tasks and basic functionality",
+      subtitle: "Обычный пользователь",
+      description: "Может просматривать и бронировать пространства",
       color: "bg-blue-50 hover:bg-blue-100 border-blue-200",
     },
     {
-      id: "admin" as UserRole,
+      id: ROLES.ADMIN,
       title: "Admin",
-      subtitle: "Extended access",
-      description: "Manage users, content and system settings",
+      subtitle: "Администратор",
+      description:
+        "Может управлять чужими пространствами, отменять и создавать брони",
       color: "bg-purple-50 hover:bg-purple-100 border-purple-200",
     },
     {
-      id: "superadmin" as UserRole,
-      title: "Super Admin",
-      subtitle: "Full access",
-      description: "Complete system control and administration",
+      id: ROLES.PROJECT_ADMIN,
+      title: "Project Admin",
+      subtitle: "Администратор проекта",
+      description: "Может редактировать карты конкретных офисов",
+      color: "bg-green-50 hover:bg-green-100 border-green-200",
+    },
+    {
+      id: ROLES.WORKSPACE_ADMIN,
+      title: "Workspace Admin",
+      subtitle: "Администратор пространства",
+      description:
+        "Может управлять любым офисом, имеет полный контроль над пространством",
       color: "bg-red-50 hover:bg-red-100 border-red-200",
     },
   ];
@@ -59,22 +121,35 @@ const Auth: React.FC<AuthProps> = ({ isVisible, onClose, onAuthComplete }) => {
         </p>
       </div>
 
-      <div className="space-y-6">
+      <form
+        className="space-y-6"
+        onSubmit={(e) => {
+          e.preventDefault();
+          handleLoginSubmit();
+        }}
+      >
         <div className="space-y-2">
           <input
             type="email"
+            name="email"
+            value={formData.email}
+            onChange={handleInputChange}
             placeholder="Email"
-            className="w-full px-0 py-4 font-['PPRader'] text-[16px] text-black bg-transparent border-0 border-b border-gray-200 focus:border-[#1daff7] focus:outline-none transition-colors duration-300 placeholder-gray-400 caret-transparent"
+            className="w-full px-0 py-4 font-['PPRader'] text-[16px] text-black bg-transparent border-0 border-b border-gray-200 focus:border-[#1daff7] focus:outline-none transition-colors duration-300 placeholder-gray-400"
           />
         </div>
         <div className="space-y-2">
           <input
             type="password"
+            name="password"
+            value={formData.password}
+            onChange={handleInputChange}
             placeholder="Пароль"
-            className="w-full px-0 py-4 font-['PPRader'] text-[16px] text-black bg-transparent border-0 border-b border-gray-200 focus:border-[#1daff7] focus:outline-none transition-colors duration-300 placeholder-gray-400 caret-transparent"
+            className="w-full px-0 py-4 font-['PPRader'] text-[16px] text-black bg-transparent border-0 border-b border-gray-200 focus:border-[#1daff7] focus:outline-none transition-colors duration-300 placeholder-gray-400"
           />
         </div>
-      </div>
+        {error && <p className="text-red-500 text-sm">{error}</p>}
+      </form>
 
       <div className="space-y-4">
         <button
@@ -108,35 +183,57 @@ const Auth: React.FC<AuthProps> = ({ isVisible, onClose, onAuthComplete }) => {
         </p>
       </div>
 
-      <div className="space-y-6">
+      <form
+        className="space-y-6"
+        onSubmit={(e) => {
+          e.preventDefault();
+          setAuthMode("role-select");
+        }}
+      >
         <div className="grid grid-cols-2 gap-4">
           <input
             type="text"
+            name="firstName"
+            value={formData.firstName}
+            onChange={handleInputChange}
             placeholder="Имя"
-            className="px-0 py-4 font-['PPRader'] text-[16px] text-black bg-transparent border-0 border-b border-gray-200 focus:border-[#1daff7] focus:outline-none transition-colors duration-300 placeholder-gray-400 caret-transparent"
+            className="px-0 py-4 font-['PPRader'] text-[16px] text-black bg-transparent border-0 border-b border-gray-200 focus:border-[#1daff7] focus:outline-none transition-colors duration-300 placeholder-gray-400"
           />
           <input
             type="text"
+            name="lastName"
+            value={formData.lastName}
+            onChange={handleInputChange}
             placeholder="Фамилия"
-            className="px-0 py-4 font-['PPRader'] text-[16px] text-black bg-transparent border-0 border-b border-gray-200 focus:border-[#1daff7] focus:outline-none transition-colors duration-300 placeholder-gray-400 caret-transparent"
+            className="px-0 py-4 font-['PPRader'] text-[16px] text-black bg-transparent border-0 border-b border-gray-200 focus:border-[#1daff7] focus:outline-none transition-colors duration-300 placeholder-gray-400"
           />
         </div>
         <input
           type="email"
+          name="email"
+          value={formData.email}
+          onChange={handleInputChange}
           placeholder="Email"
-          className="w-full px-0 py-4 font-['PPRader'] text-[16px] text-black bg-transparent border-0 border-b border-gray-200 focus:border-[#1daff7] focus:outline-none transition-colors duration-300 placeholder-gray-400 caret-transparent"
+          className="w-full px-0 py-4 font-['PPRader'] text-[16px] text-black bg-transparent border-0 border-b border-gray-200 focus:border-[#1daff7] focus:outline-none transition-colors duration-300 placeholder-gray-400"
         />
         <input
           type="password"
+          name="password"
+          value={formData.password}
+          onChange={handleInputChange}
           placeholder="Пароль"
-          className="w-full px-0 py-4 font-['PPRader'] text-[16px] text-black bg-transparent border-0 border-b border-gray-200 focus:border-[#1daff7] focus:outline-none transition-colors duration-300 placeholder-gray-400 caret-transparent"
+          className="w-full px-0 py-4 font-['PPRader'] text-[16px] text-black bg-transparent border-0 border-b border-gray-200 focus:border-[#1daff7] focus:outline-none transition-colors duration-300 placeholder-gray-400"
         />
-      </div>
+        {error && <p className="text-red-500 text-sm">{error}</p>}
+      </form>
 
       <div className="space-y-4">
         <button
           onClick={() => setAuthMode("role-select")}
-          className="w-full py-4 bg-black text-white font-['PPRader'] text-[16px] hover:bg-[#1daff7] transition-all duration-300 transform hover:translate-y-[-2px]"
+          disabled={
+            !formData.email || !formData.password || !formData.firstName
+          }
+          className="w-full py-4 bg-black text-white font-['PPRader'] text-[16px] hover:bg-[#1daff7] transition-all duration-300 transform hover:translate-y-[-2px] disabled:opacity-50 disabled:cursor-not-allowed"
         >
           Продолжить
         </button>

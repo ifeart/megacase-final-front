@@ -1,11 +1,20 @@
-import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import Auth from "../components/Auth";
 import Silk from "../components/Silk";
+import { useAuth } from "@/context/AuthContext";
 
 export default function LandingPage() {
   const [isOverlayVisible, setIsOverlayVisible] = useState(false);
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const location = useLocation();
+
+  useEffect(() => {
+    if (location.state?.from && !user) {
+      setIsOverlayVisible(true);
+    }
+  }, [location, user]);
 
   const handleLoginClick = () => {
     setIsOverlayVisible(true);
@@ -16,40 +25,38 @@ export default function LandingPage() {
   };
 
   const handleAuthComplete = () => {
-    // После успешной авторизации переходим к setup
     setIsOverlayVisible(false);
-    navigate("/setup");
+    navigate("/booking");
   };
 
   return (
     <div className="fixed inset-0 bg-white overflow-hidden">
-      <Link
-        to="/"
-        className="fixed top-8 left-13 right-13 z-10 flex items-center justify-between"
-      >
-        <svg
-          width="82"
-          height="32"
-          viewBox="0 0 82 32"
-          fill="none"
-          className="bg-transparent transition-all duration-300 hover:scale-105"
-          preserveAspectRatio="xMidYMid meet"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <path
-            d="M72.8093 6.35938H53.6667V10.5987H61.1186V25.5731H65.3573V10.5987H72.8093V6.35938Z"
-            fill="black"
-          />
-          <path
-            d="M81.2094 6.29425H76.8333V10.6019V25.5763H81.2094V6.29425Z"
-            fill="black"
-          />
-          <path
-            d="M19.2051 12.7863H31.9212V19.2821H19.2051V32H12.7786V19.2137H0.0625V12.7179H12.7786V0H19.2051V12.7863ZM38.3476 0V32H44.7741V0H38.3476Z"
-            fill="#1DAFF7"
-            className="transition-fill duration-300 hover:fill-[#0f8cd4]"
-          />
-        </svg>
+      <div className="fixed top-8 left-13 right-13 z-10 flex items-center justify-between">
+        <Link to="/">
+          <svg
+            width="82"
+            height="32"
+            viewBox="0 0 82 32"
+            fill="none"
+            className="bg-transparent transition-all duration-300 hover:scale-105"
+            preserveAspectRatio="xMidYMid meet"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M72.8093 6.35938H53.6667V10.5987H61.1186V25.5731H65.3573V10.5987H72.8093V6.35938Z"
+              fill="black"
+            />
+            <path
+              d="M81.2094 6.29425H76.8333V10.6019V25.5763H81.2094V6.29425Z"
+              fill="black"
+            />
+            <path
+              d="M19.2051 12.7863H31.9212V19.2821H19.2051V32H12.7786V19.2137H0.0625V12.7179H12.7786V0H19.2051V12.7863ZM38.3476 0V32H44.7741V0H38.3476Z"
+              fill="#1DAFF7"
+              className="transition-fill duration-300 hover:fill-[#0f8cd4]"
+            />
+          </svg>
+        </Link>
 
         <nav className="flex items-center gap-12 font-['PPRader'] text-[25px]">
           <Link
@@ -80,9 +87,9 @@ export default function LandingPage() {
         >
           Войти <span className="text-[#1daff7] text-[32px]">→</span>
         </button>
-      </Link>
+      </div>
 
-      <div className="min-h-screen pt-40 bg-white overflow-hidden">
+      <div className="min-h-screen pt-33 bg-white overflow-hidden">
         <div className="max-w-[1920px] h-full mx-auto px-13">
           <div className="flex justify-center">
             <div className="relative w-full max-w-[100%] h-[1100px] rounded-[30px] overflow-hidden z-[5]">

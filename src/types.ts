@@ -1,6 +1,27 @@
 export type SmplrCoord2d = { levelIndex: number; x: number; z: number };
 export type SmplrCoord3d = SmplrCoord2d & { elevation: number };
 
+export const ROLES = {
+		USER: 'USER',
+		ADMIN: 'ADMIN',
+		PROJECT_ADMIN: 'PROJECT_ADMIN',
+		WORKSPACE_ADMIN: 'WORKSPACE_ADMIN'
+  } as const;
+
+export type ROLE = keyof typeof ROLES;
+
+export type User = {
+	id: string;
+	name: string;
+	role: ROLE;
+	email: string;
+	permissions?: {
+		projectIds: string[];
+		workspaceIds: string[];
+	};
+	avatar?: string;
+};
+
 export type Marker = {
 	id: string;
 	name: string;
