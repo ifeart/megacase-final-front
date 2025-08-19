@@ -7,7 +7,7 @@ import { useAuth } from "@/context/AuthContext";
 export default function LandingPage() {
   const [isOverlayVisible, setIsOverlayVisible] = useState(false);
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const location = useLocation();
 
   useEffect(() => {
@@ -18,6 +18,10 @@ export default function LandingPage() {
 
   const handleLoginClick = () => {
     setIsOverlayVisible(true);
+  };
+
+  const handleLogoutClick = () => {
+    logout();
   };
 
   const handleCloseOverlay = () => {
@@ -81,12 +85,21 @@ export default function LandingPage() {
           </Link>
         </nav>
 
-        <button
-          onClick={handleLoginClick}
-          className="bg-transparent cursor-pointer text-black px-4 py-2 font-['PPRader'] text-[25px] transition-all duration-300 hover:text-[#1daff7] hover:scale-105 flex items-center gap-2"
-        >
-          Войти <span className="text-[#1daff7] text-[32px]">→</span>
-        </button>
+        {!user ? (
+          <button
+            onClick={handleLoginClick}
+            className="bg-transparent cursor-pointer text-black px-4 py-2 font-['PPRader'] text-[25px] transition-all duration-300 hover:text-[#1daff7] hover:scale-105 flex items-center gap-2"
+          >
+            Войти <span className="text-[#1daff7] text-[32px]">→</span>
+          </button>
+        ) : (
+          <button
+            onClick={handleLogoutClick}
+            className="bg-transparent cursor-pointer text-black px-4 py-2 font-['PPRader'] text-[25px] transition-all duration-300 hover:text-[#1daff7] hover:scale-105 flex items-center gap-2"
+          >
+            <span className="text-[#1daff7] text-[32px]">←</span>Выйти
+          </button>
+        )}
       </div>
 
       <div className="min-h-screen pt-33 bg-white overflow-hidden">

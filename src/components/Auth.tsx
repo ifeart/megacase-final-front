@@ -116,8 +116,8 @@ const Auth: React.FC<AuthProps> = ({ isVisible, onClose, onAuthComplete }) => {
         <h2 className="font-['PPRader'] text-[36px] text-black tracking-tight">
           Приветствуем снова
         </h2>
-        <p className="font-['PPRader'] text-[16px] text-gray-500">
-          Продолжить?
+        <p className="font-['PPRader'] text-[14px] text-gray-500">
+          Авторизуйтесь, используя корпоративный аккаунт
         </p>
       </div>
 
@@ -159,15 +159,15 @@ const Auth: React.FC<AuthProps> = ({ isVisible, onClose, onAuthComplete }) => {
           Войти
         </button>
 
-        <p className="text-center font-['PPRader'] text-[14px] text-gray-500">
+        {/* <p className="text-center font-['PPRader'] text-[14px] text-gray-500">
           Нет аккаунта?{" "}
           <button
             onClick={() => setAuthMode("register")}
             className="text-[#1daff7] hover:underline"
           >
             Создать новый
-          </button>
-        </p>
+          </button> */}
+        {/* </p> */}
       </div>
     </div>
   );

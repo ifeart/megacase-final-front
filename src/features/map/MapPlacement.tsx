@@ -6,16 +6,17 @@ import { CLIENT_TOKEN } from "../../constants";
 import { loadSmplr } from "../../services/smplr";
 import {
   finalizeOfficeData,
-  getOffice,
-  getOfficesOnMap,
+  getOfficeData,
+  getOfficesForMap,
 } from "../../services/storage";
+import type { OfficeOnMap } from "@/types";
 
 type Props = {
-  spaceId: string;
+  officeNameId: string;
   onNext: () => void;
 };
 
-export const MapPlacement: React.FC<Props> = ({ spaceId, onNext }) => {
+export const MapPlacement: React.FC<Props> = ({ officeNameId, onNext }) => {
   const navigate = useNavigate();
   const containerId = useId().replace(/:/g, "-");
   const mapRef = useRef<any>(null);
@@ -23,23 +24,15 @@ export const MapPlacement: React.FC<Props> = ({ spaceId, onNext }) => {
     lat: number;
     lng: number;
   } | null>(null);
-  const [officeName, setOfficeName] = useState("");
-  const [cityName, setCityName] = useState("");
-  const [initialized, setInitialized] = useState(false);
-
   // Получаем данные текущего офиса
-  const currentOffice = getOffice(spaceId);
-  const existingOffices = getOfficesOnMap();
+  const currentOffice = getOfficeData(officeNameId);
+  const existingOffices = getOfficesForMap();
 
-  // Инициализируем поля ТОЛЬКО ОДИН РАЗ
   useEffect(() => {
-    if (currentOffice && !initialized) {
-      setOfficeName(currentOffice.name);
-      setCityName(currentOffice.city);
-      setSelectedCoords(currentOffice.coordinates || null);
-      setInitialized(true);
+    if (currentOffice.meta?.coordinates) {
+      setSelectedCoords(currentOffice.meta.coordinates);
     }
-  }, [currentOffice, initialized]);
+  }, [currentOffice]);
 
   const handlePlaceOffice = () => {
     if (!selectedCoords) {
@@ -47,12 +40,7 @@ export const MapPlacement: React.FC<Props> = ({ spaceId, onNext }) => {
       return;
     }
 
-    if (!officeName.trim() || !cityName.trim()) {
-      alert("Заполните название и город");
-      return;
-    }
-
-    // Сохраняем все данные разом
+    // Сохраняем координаты
     finalizeOfficeData(selectedCoords);
     onNext();
   };
@@ -62,7 +50,7 @@ export const MapPlacement: React.FC<Props> = ({ spaceId, onNext }) => {
   };
 
   // Подготавливаем данные для существующих офисов на карте
-  const pointsLayerData = existingOffices.map((office) => ({
+  const pointsLayerData = existingOffices.map((office: OfficeOnMap) => ({
     id: office.id,
     position: { lng: office.lng, lat: office.lat },
     name: office.name,
@@ -119,7 +107,7 @@ export const MapPlacement: React.FC<Props> = ({ spaceId, onNext }) => {
                       lng: selectedCoords.lng,
                       lat: selectedCoords.lat,
                     },
-                    name: officeName || "Новый офис",
+                    name: currentOffice.meta?.displayName || "Новый офис",
                   },
                 ],
                 color: "#1daff7",
@@ -148,7 +136,7 @@ export const MapPlacement: React.FC<Props> = ({ spaceId, onNext }) => {
                         lng: newCoords.lng,
                         lat: newCoords.lat,
                       },
-                      name: officeName || "Новый офис",
+                      name: currentOffice.meta?.displayName || "Новый офис",
                     },
                   ],
                   color: "#1daff7",
@@ -171,7 +159,7 @@ export const MapPlacement: React.FC<Props> = ({ spaceId, onNext }) => {
       } catch {}
       mapRef.current = null;
     };
-  }, [containerId]);
+  }, [containerId, pointsLayerData, selectedCoords]);
 
   return (
     <div className="relative h-full w-full bg-white">
@@ -186,40 +174,12 @@ export const MapPlacement: React.FC<Props> = ({ spaceId, onNext }) => {
           Выберите место на карте для вашего офиса
         </p>
 
-        <div className="space-y-6">
-          <div>
-            <label className="block text-[14px] font-medium text-black mb-2">
-              Название офиса
-            </label>
-            <input
-              type="text"
-              className="w-full px-0 py-3 text-[16px] text-black bg-transparent border-0 border-b border-gray-200 focus:border-[#1daff7] focus:outline-none transition-colors duration-300 placeholder-gray-400"
-              value={officeName}
-              onChange={(e) => setOfficeName(e.target.value)}
-              placeholder="Введите название"
-            />
+        {selectedCoords && (
+          <div className="text-[12px] text-gray-500 space-y-1">
+            <div>Широта: {selectedCoords.lat.toFixed(4)}</div>
+            <div>Долгота: {selectedCoords.lng.toFixed(4)}</div>
           </div>
-
-          <div>
-            <label className="block text-[14px] font-medium text-black mb-2">
-              Город
-            </label>
-            <input
-              type="text"
-              className="w-full px-0 py-3 text-[16px] text-black bg-transparent border-0 border-b border-gray-200 focus:border-[#1daff7] focus:outline-none transition-colors duration-300 placeholder-gray-400"
-              value={cityName}
-              onChange={(e) => setCityName(e.target.value)}
-              placeholder="Введите город"
-            />
-          </div>
-
-          {selectedCoords && (
-            <div className="text-[12px] text-gray-500 space-y-1">
-              <div>Широта: {selectedCoords.lat.toFixed(4)}</div>
-              <div>Долгота: {selectedCoords.lng.toFixed(4)}</div>
-            </div>
-          )}
-        </div>
+        )}
       </div>
 
       {/* Кнопки действий */}
@@ -233,7 +193,7 @@ export const MapPlacement: React.FC<Props> = ({ spaceId, onNext }) => {
         <button
           className="px-6 py-4 text-[16px] primary-button disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
           onClick={handlePlaceOffice}
-          disabled={!selectedCoords || !officeName.trim() || !cityName.trim()}
+          disabled={!selectedCoords}
         >
           Разместить офис
         </button>
@@ -241,7 +201,7 @@ export const MapPlacement: React.FC<Props> = ({ spaceId, onNext }) => {
 
       {/* Инструкции */}
       <div className="absolute bottom-8 left-8 z-40 glass-panel rounded-[15px] p-4 text-[14px] max-w-xs">
-        <div className="font-medium mb-2 text-black">Instruktsii:</div>
+        <div className="font-medium mb-2 text-black">Инструкции:</div>
         <ul className="text-gray-600 space-y-1">
           <li>• Кликните на карте для выбора места</li>
           <li>• Заполните название и город</li>

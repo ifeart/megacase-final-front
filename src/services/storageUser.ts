@@ -1,4 +1,4 @@
-import { type User } from '@/types';
+import { ROLES, type User } from '@/types';
 
 const STORAGE_KEYS = {
   USER: 'user_data',
@@ -11,21 +11,21 @@ export const MOCK_USERS: User[] = [
     id: '1',
     name: 'John User',
     email: 'user@example.com',
-    role: 'USER',
+    role: ROLES.USER,
     avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=John',
   },
   {
     id: '2',
     name: 'Admin Smith',
     email: 'admin@example.com',
-    role: 'ADMIN',
+    role: ROLES.ADMIN,
     avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Admin',
   },
   {
     id: '3',
     name: 'Project Manager',
     email: 'pm@example.com',
-    role: 'PROJECT_ADMIN',
+    role: ROLES.PROJECT_ADMIN,
     permissions: {
       projectIds: ['project1', 'project2'],
       workspaceIds: ['workspace1'],
@@ -36,7 +36,7 @@ export const MOCK_USERS: User[] = [
     id: '4',
     name: 'Workspace Admin',
     email: 'ws@example.com',
-    role: 'WORKSPACE_ADMIN',
+    role: ROLES.WORKSPACE_ADMIN,
     permissions: {
       projectIds: ['*'],
       workspaceIds: ['*'],

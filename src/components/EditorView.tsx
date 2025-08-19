@@ -42,7 +42,6 @@ export const EditorView: React.FC<Props> = ({ spaceId, onReady, onNext }) => {
         <div id={containerId} className="absolute inset-0" />
       </div>
 
-      {/* Нижняя панель действий */}
       <div className="fixed bottom-0 left-0 right-0 z-50 glass-panel border-t-0">
         <div className="mx-auto max-w-6xl px-8 py-2 flex items-center gap-6">
           <div className="text-gray-500 text-[16px]">Редактор пространства</div>
@@ -58,7 +57,6 @@ export const EditorView: React.FC<Props> = ({ spaceId, onReady, onNext }) => {
                 setPublishing(true);
                 await setSpaceStatusPublished(spaceId);
               } catch {
-                // опционально: уведомление об ошибке
               } finally {
                 setPublishing(false);
                 onNext?.();
