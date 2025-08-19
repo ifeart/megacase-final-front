@@ -1,24 +1,70 @@
 import { useState } from "react";
 import { createSpace, getSpaceIfExists } from "../../services/smplr";
 import {
-  getCurrentSpaceId,
-  setCurrentSpaceId,
+  getCurrentOfficeId,
+  setCurrentOfficeId,
   initializeNewOffice,
-  getOffice,
+  getOfficeData,
+  getAllOfficesMeta,
 } from "../../services/storage";
 
 type Props = { onDone: (spaceId: string) => void };
 
-export const SpaceSetup: React.FC<Props> = ({ onDone }) => {
-  const existing = getCurrentSpaceId();
-  const [sid, setSid] = useState(existing);
-  const [name, setName] = useState("My Office");
-  const [busy, setBusy] = useState(false);
+interface OfficeFormData {
+  nameId: string;
+  displayName: string;
+  city: string;
+}
 
-  const saveAndNext = (id: string) => {
-    setCurrentSpaceId(id);
-    // console.log("Установлен текущий офис:", id);
-    onDone(id);
+export const SpaceSetup: React.FC<Props> = ({ onDone }) => {
+  const currentOfficeId = getCurrentOfficeId();
+  const [spaceId, setSpaceId] = useState(currentOfficeId);
+  const [formData, setFormData] = useState<OfficeFormData>({
+    nameId: "",
+    displayName: "",
+    city: "",
+  });
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const validateNameId = (nameId: string): boolean => {
+    // Проверяем формат: только латинские буквы, цифры и дефис
+    if (!/^[a-z0-9-]+$/.test(nameId)) {
+      setError(
+        "ID офиса может содержать только латинские буквы, цифры и дефис"
+      );
+      return false;
+    }
+
+    // Проверяем уникальность
+    const existingOffices = getAllOfficesMeta();
+    if (existingOffices.some((office) => office.nameId === nameId)) {
+      setError("Офис с таким ID уже существует");
+      return false;
+    }
+
+    setError(null);
+    return true;
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+
+    if (name === "nameId") {
+      validateNameId(value);
+    }
+  };
+
+  const saveAndNext = (nameId: string) => {
+    setCurrentOfficeId(nameId);
+    const officeMeta = getOfficeData(nameId)?.meta;
+    if (officeMeta) {
+      onDone(officeMeta.spaceId);
+    }
   };
 
   return (
@@ -42,36 +88,40 @@ export const SpaceSetup: React.FC<Props> = ({ onDone }) => {
               <input
                 className="flex-1 px-0 py-4 text-[16px] text-black bg-transparent border-0 border-b border-gray-200 focus:border-[#1daff7] focus:outline-none transition-colors duration-300 placeholder-gray-400"
                 placeholder="Space ID (spc_xxx)"
-                value={sid}
-                onChange={(e) => setSid(e.target.value)}
+                value={spaceId}
+                onChange={(e) => setSpaceId(e.target.value)}
               />
               <button
                 className="px-8 py-4 text-[16px] border border-gray-300 text-gray-700 hover:border-gray-400 transition-all duration-300 hover-lift disabled:opacity-50"
-                disabled={!sid || busy}
+                disabled={!spaceId || busy}
                 onClick={async () => {
                   setBusy(true);
                   try {
-                    const exists = await getSpaceIfExists(sid.trim());
-                    if (!exists) {
+                    const smplrSpace = await getSpaceIfExists(spaceId.trim());
+                    if (!smplrSpace) {
                       alert("Пространство не найдено");
                       return;
                     }
 
                     // Проверяем, есть ли этот офис в нашей системе
-                    let office = getOffice(sid.trim());
-                    if (!office) {
+                    let officeData = getOfficeData(formData.nameId);
+                    if (!officeData.meta) {
                       // Если офиса нет, инициализируем его
                       console.log(
                         "Инициализируем существующий офис:",
-                        sid.trim()
+                        formData.nameId
                       );
-                      office = initializeNewOffice(
-                        sid.trim(),
-                        exists.name || "Existing Office"
+
+                      initializeNewOffice(
+                        formData.nameId,
+                        spaceId.trim(),
+                        formData.displayName,
+                        formData.city,
+                        false // isPublished
                       );
                     }
 
-                    saveAndNext(sid.trim());
+                    saveAndNext(formData.nameId);
                   } catch (error) {
                     console.error("Ошибка при проверке офиса:", error);
                     alert("Ошибка при проверке офиса");
@@ -91,38 +141,93 @@ export const SpaceSetup: React.FC<Props> = ({ onDone }) => {
             <div className="flex-1 h-px bg-gray-200"></div>
           </div>
 
-          <div className="space-y-4">
+          <div className="space-y-6">
             <h3 className="text-[20px] text-black">Создать новый офис</h3>
-            <div className="flex gap-4">
-              <input
-                className="flex-1 px-0 py-4 text-[16px] text-black bg-transparent border-0 border-b border-gray-200 focus:border-[#1daff7] focus:outline-none transition-colors duration-300 placeholder-gray-400"
-                placeholder="Название нового офиса"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-              />
-              <button
-                className="px-8 py-4 text-[16px] primary-button disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
-                disabled={busy || !name}
-                onClick={async () => {
-                  try {
-                    setBusy(true);
-                    console.log("Создаем новый офис:", name.trim());
-                    const newId = await createSpace(name.trim());
-                    console.log("Получен новый ID:", newId);
-                    initializeNewOffice(newId, name.trim());
-                    console.log("Офис инициализирован в новой системе");
-                    saveAndNext(newId);
-                  } catch (error) {
-                    console.error("Ошибка при создании офиса:", error);
-                    alert("Ошибка при создании пространства");
-                  } finally {
-                    setBusy(false);
-                  }
-                }}
-              >
-                {busy ? "Создаю..." : "Создать"}
-              </button>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-[14px] font-medium text-black mb-2">
+                  ID офиса (для URL)
+                </label>
+                <input
+                  name="nameId"
+                  className="w-full px-0 py-3 text-[16px] text-black bg-transparent border-0 border-b border-gray-200 focus:border-[#1daff7] focus:outline-none transition-colors duration-300 placeholder-gray-400"
+                  placeholder="например: moscow-hq"
+                  value={formData.nameId}
+                  onChange={handleInputChange}
+                />
+                {error && <p className="mt-1 text-sm text-red-500">{error}</p>}
+              </div>
+
+              <div>
+                <label className="block text-[14px] font-medium text-black mb-2">
+                  Название офиса (публичное)
+                </label>
+                <input
+                  name="displayName"
+                  className="w-full px-0 py-3 text-[16px] text-black bg-transparent border-0 border-b border-gray-200 focus:border-[#1daff7] focus:outline-none transition-colors duration-300 placeholder-gray-400"
+                  placeholder="Московский офис"
+                  value={formData.displayName}
+                  onChange={handleInputChange}
+                />
+              </div>
+
+              <div>
+                <label className="block text-[14px] font-medium text-black mb-2">
+                  Город
+                </label>
+                <input
+                  name="city"
+                  className="w-full px-0 py-3 text-[16px] text-black bg-transparent border-0 border-b border-gray-200 focus:border-[#1daff7] focus:outline-none transition-colors duration-300 placeholder-gray-400"
+                  placeholder="Москва"
+                  value={formData.city}
+                  onChange={handleInputChange}
+                />
+              </div>
             </div>
+
+            <button
+              className="w-full px-8 py-4 text-[16px] primary-button disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+              disabled={
+                busy ||
+                !formData.nameId ||
+                !formData.displayName ||
+                !formData.city ||
+                !!error
+              }
+              onClick={async () => {
+                try {
+                  setBusy(true);
+                  console.log("Создаем новый офис:", formData.displayName);
+
+                  // Создаем пространство в smplr
+                  const newSpaceId = await createSpace(formData.displayName);
+                  console.log("Получен новый ID пространства:", newSpaceId);
+
+                  // Инициализируем офис в нашей системе
+                  initializeNewOffice(
+                    formData.nameId,
+                    newSpaceId,
+                    formData.displayName,
+                    formData.city,
+                    false // isPublished
+                  );
+
+                  console.log(
+                    "Офис инициализирован в системе:",
+                    formData.nameId
+                  );
+                  saveAndNext(formData.nameId);
+                } catch (error) {
+                  console.error("Ошибка при создании офиса:", error);
+                  alert("Ошибка при создании пространства");
+                } finally {
+                  setBusy(false);
+                }
+              }}
+            >
+              {busy ? "Создаю..." : "Создать офис"}
+            </button>
           </div>
         </div>
       </div>

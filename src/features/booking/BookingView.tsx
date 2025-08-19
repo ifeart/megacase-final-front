@@ -1,6 +1,3 @@
-/* eslint-disable no-empty */
-/* eslint-disable react-hooks/exhaustive-deps */
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, {
   useEffect,
   useRef,
@@ -23,11 +20,14 @@ import {
   getRoomsInclusion,
   getDesksInclusion,
   getMarkersInclusion,
-  getOfficesOnMap,
-  setCurrentSpaceId,
+  getOfficesForMap,
+  setCurrentOfficeId,
+  getOfficeMeta,
+  verifyAndRepairOfficeData,
 } from "../../services/storage";
+import type { OfficeOnMap } from "@/types";
 
-type Props = { spaceId?: string };
+type Props = { officeNameId?: string };
 
 type HoverTip = {
   kind: "room" | "desk";
@@ -38,7 +38,7 @@ type HoverTip = {
   y: number;
 } | null;
 
-export const BookingView: React.FC<Props> = ({ spaceId }) => {
+export const BookingView: React.FC<Props> = ({ officeNameId }) => {
   const navigate = useNavigate();
   const containerId = useId().replace(/:/g, "-");
   const spaceRef = useRef<any>(null);
@@ -50,14 +50,33 @@ export const BookingView: React.FC<Props> = ({ spaceId }) => {
   const [ready, setReady] = useState(false);
   const [hover, setHover] = useState<HoverTip>(null);
   const [viewMode, setViewMode] = useState<"map" | "space">(
-    spaceId ? "space" : "map"
+    officeNameId ? "space" : "map"
   );
+
+  // Проверяем и восстанавливаем данные при загрузке
+  useEffect(() => {
+    verifyAndRepairOfficeData();
+  }, []);
+
+  // Устанавливаем текущий офис при прямом переходе по URL
+  useEffect(() => {
+    if (officeNameId) {
+      const officeMeta = getOfficeMeta(officeNameId);
+      if (officeMeta) {
+        setCurrentOfficeId(officeNameId);
+      } else {
+        // Если офис не найден, перенаправляем на общую карту
+        navigate("/booking");
+      }
+    }
+  }, [officeNameId, navigate]);
   const [selectedCity, setSelectedCity] = useState<string | null>(null);
-  const [cityOffices, setCityOffices] = useState<any[] | null>(null);
+  const [cityOffices, setCityOffices] = useState<OfficeOnMap[] | null>(null);
 
-  const officesOnMap = getOfficesOnMap();
+  const officesOnMap = getOfficesForMap();
+  console.log("officesOnMap", officesOnMap);
+  console.log("getOfficeMeta()", getOfficeMeta("moskow"));
 
-  // Данные для карты офисов
   const pointsLayerData = useMemo(
     () =>
       officesOnMap.map((o) => ({
@@ -70,8 +89,8 @@ export const BookingView: React.FC<Props> = ({ spaceId }) => {
   );
 
   const handleOfficeSelect = useCallback(
-    (officeId: string) => {
-      const office = officesOnMap.find((o) => o.id === officeId);
+    (nameId: string) => {
+      const office = officesOnMap.find((o) => o.id === nameId);
       if (!office) return;
 
       const officesInCity = officesOnMap.filter((o) => o.city === office.city);
@@ -80,19 +99,22 @@ export const BookingView: React.FC<Props> = ({ spaceId }) => {
         setSelectedCity(office.city);
         setCityOffices(officesInCity);
       } else {
-        setCurrentSpaceId(officeId);
-        setViewMode("space");
+        setCurrentOfficeId(nameId);
+        navigate(`/booking/${nameId}`);
       }
     },
-    [officesOnMap]
+    [officesOnMap, navigate]
   );
 
-  const handleCityOfficeSelect = useCallback((officeId: string) => {
-    setCurrentSpaceId(officeId);
-    setSelectedCity(null);
-    setCityOffices(null);
-    setViewMode("space");
-  }, []);
+  const handleCityOfficeSelect = useCallback(
+    (nameId: string) => {
+      setCurrentOfficeId(nameId);
+      setSelectedCity(null);
+      setCityOffices(null);
+      navigate(`/booking/${nameId}`);
+    },
+    [navigate]
+  );
 
   // Данные для текущего офиса (если выбран)
   const roomsData = useCallback(() => {
@@ -242,8 +264,6 @@ export const BookingView: React.FC<Props> = ({ spaceId }) => {
           containerId,
         });
 
-        // map.setLayoutProperty('label_country', 'text-field', ['get', 'name:ru']);
-
         mapRef.current = map;
 
         return map.startViewer({
@@ -297,10 +317,8 @@ export const BookingView: React.FC<Props> = ({ spaceId }) => {
   }, [viewMode, containerId, pointsLayerData, handleOfficeSelect]);
 
   const handleBackToMap = useCallback(() => {
-    setViewMode("map");
-    setReady(false);
-    setHover(null);
-  }, []);
+    navigate("/booking");
+  }, [navigate]);
 
   const handleCreateNewOffice = useCallback(() => {
     navigate("/setup");
@@ -360,8 +378,8 @@ export const BookingView: React.FC<Props> = ({ spaceId }) => {
               Добро пожаловать!
             </h3>
             <p className="text-[16px] text-gray-600">
-              У вас пока нет офисов на карте. Нажмите "Создать новый офис"
-              чтобы начать.
+              У вас пока нет офисов на карте. Нажмите "Создать новый офис" чтобы
+              начать.
             </p>
           </div>
         )}
@@ -372,7 +390,8 @@ export const BookingView: React.FC<Props> = ({ spaceId }) => {
               Ваши офисы
             </h3>
             <p className="text-[16px] text-gray-600">
-              Выберите офис на карте для управления бронированием или создайте новый.
+              Выберите офис на карте для управления бронированием или создайте
+              новый.
             </p>
           </div>
         )}
@@ -384,7 +403,7 @@ export const BookingView: React.FC<Props> = ({ spaceId }) => {
   return (
     <div className="relative h-full w-full bg-white">
       <SpaceViewer
-        spaceId={spaceId || ""}
+        spaceId={getOfficeMeta(officeNameId || "")?.spaceId || ""}
         clientToken={CLIENT_TOKEN}
         onReady={onSpaceReady}
         viewerOptions={{ controlsPosition: "center-left" }}
@@ -421,12 +440,6 @@ export const BookingView: React.FC<Props> = ({ spaceId }) => {
         >
           ← Вернуться к карте
         </button>
-      </div>
-
-      <div className="absolute bottom-0 pr-2 right-0 z-40 transform translate-x-[4px] translate-y-[-3px]">
-        <div className="bg-white text-slate-700 text-xs px-6 py-3 rounded-md">
-          Created by 7 and 31 teams
-        </div>
       </div>
     </div>
   );
