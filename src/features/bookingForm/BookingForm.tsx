@@ -1,23 +1,24 @@
+import { toggleAvailability } from '@/services/storage'
 import { IconX } from '@tabler/icons-react'
 import React, { useState } from 'react'
 
 interface BookingFormProps {
-	isOpen?: boolean
-	onClose?: () => void
-	placeBooking: 'room' | 'table'
-	userId: string
-	placeBookingId: string
+	isOpen: boolean
+	onClose: () => void
+	placeBooking: 'room' | 'table' | null
+	userId: string | null
+	placeBookingId: string | null
 }
 
 export const BookingForm: React.FC<BookingFormProps> = ({
-	isOpen = true,
+	isOpen,
 	onClose,
 	placeBooking = 'table',
-	userId = 'sdfsdfsdfsdf',
-	placeBookingId = 'dfdsfsdfsdf',
+	userId,
+	placeBookingId,
 }) => {
 	const [selectedDay, setSelectedDay] = useState<
-		'today' | 'tomorrow' | 'dayAfter'
+		'today' | 'tomorrow' | 'dayAfter' | ''
 	>('')
 	const [selectedTime, setSelectedTime] = useState<string>('')
 	const [selectedDuration, setSelectedDuration] = useState<
@@ -58,8 +59,16 @@ export const BookingForm: React.FC<BookingFormProps> = ({
 		{ key: 'toTheEndWorkDay', label: 'До 18:00' },
 	]
 
+	const durations =
+		placeBooking === 'room' ? durationBookingOfRoom : durationBookingOfTable
+
 	const handleBooking = (e: React.FormEvent) => {
 		e.preventDefault()
+		if (!placeBookingId) return
+		toggleAvailability(
+			placeBooking === 'room' ? 'room' : 'desk',
+			placeBookingId
+		)
 		console.log('Бронирование:', {
 			userId,
 			placeBookingId,
@@ -67,6 +76,7 @@ export const BookingForm: React.FC<BookingFormProps> = ({
 			time: selectedTime,
 			duration: selectedDuration,
 		})
+		onClose()
 	}
 
 	if (!isOpen) return null
@@ -143,41 +153,23 @@ export const BookingForm: React.FC<BookingFormProps> = ({
 				<fieldset className='space-y-3'>
 					<legend className='sr-only'>Продолжительность</legend>
 					<div className='bg-gray-100 rounded-xl p-1 flex'>
-						{placeBooking === 'room'
-							? durationBookingOfRoom.map(({ key, label }) => (
-									<button
-										key={key}
-										type='button'
-										onClick={() =>
-											setSelectedDuration(key as typeof selectedDuration)
-										}
-										aria-pressed={selectedDuration === key}
-										className={`flex-1 py-3 px-4 font-['PPRader'] text-[14px] rounded-lg transition-all duration-300 ${
-											selectedDuration === key
-												? 'bg-black text-white shadow-sm'
-												: 'text-gray-500 hover:text-black'
-										}`}
-									>
-										{label}
-									</button>
-							  ))
-							: durationBookingOfTable.map(({ key, label }) => (
-									<button
-										key={key}
-										type='button'
-										onClick={() =>
-											setSelectedDuration(key as typeof selectedDuration)
-										}
-										aria-pressed={selectedDuration === key}
-										className={`flex-1 py-3 px-4 font-['PPRader'] text-[14px] rounded-lg transition-all duration-300 ${
-											selectedDuration === key
-												? 'bg-black text-white shadow-sm'
-												: 'text-gray-500 hover:text-black'
-										}`}
-									>
-										{label}
-									</button>
-							  ))}
+						{durations.map(({ key, label }) => (
+							<button
+								key={key}
+								type='button'
+								onClick={() =>
+									setSelectedDuration(key as typeof selectedDuration)
+								}
+								aria-pressed={selectedDuration === key}
+								className={`flex-1 py-3 px-4 font-['PPRader'] text-[14px] rounded-lg transition-all duration-300 ${
+									selectedDuration === key
+										? 'bg-black text-white shadow-sm'
+										: 'text-gray-500 hover:text-black'
+								}`}
+							>
+								{label}
+							</button>
+						))}
 					</div>
 				</fieldset>
 
@@ -185,7 +177,6 @@ export const BookingForm: React.FC<BookingFormProps> = ({
 					<button
 						type='submit'
 						className="w-full py-4 bg-black text-white font-['PPRader'] text-[16px] hover:bg-gray-800 transition-all duration-300 transform hover:translate-y-[-2px]"
-						onClick={onClose}
 					>
 						Забронировать
 					</button>
