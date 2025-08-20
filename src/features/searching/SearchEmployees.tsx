@@ -350,6 +350,8 @@ import { IconArrowLeft, IconFilter, IconSearch } from '@tabler/icons-react'
 import React from 'react'
 import { Link } from 'react-router-dom'
 
+import { BookingForm } from '../bookingForm/BookingForm'
+
 export function SearchEmployees() {
 	const [isFilterOpen, setIsFilterOpen] = React.useState(false)
 

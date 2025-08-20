@@ -63,6 +63,7 @@ export const SpaceSetup: React.FC<Props> = ({ onDone }) => {
     setCurrentOfficeId(nameId);
     const officeMeta = getOfficeData(nameId)?.meta;
     if (officeMeta) {
+      console.log('spaceId: ',  officeMeta.spaceId)
       onDone(officeMeta.spaceId);
     }
   };
@@ -215,7 +216,8 @@ export const SpaceSetup: React.FC<Props> = ({ onDone }) => {
 
                   console.log(
                     "Офис инициализирован в системе:",
-                    formData.nameId
+                    formData.nameId,
+                    newSpaceId
                   );
                   saveAndNext(formData.nameId);
                 } catch (error) {
