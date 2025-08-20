@@ -49,7 +49,7 @@ export default function InternalHeader() {
           </Link>
           <span className="text-gray-300 select-none">///</span>
           <Link
-            to="/find"
+            to="/search/employees"
             className="text-[16px] underline-hover text-gray-600 cursor-pointer"
           >
             Поиск
@@ -67,7 +67,7 @@ export default function InternalHeader() {
             </>
           )}
           <Link
-            to="/profile"
+            to="/user/profile"
             className="text-[16px] underline-hover text-gray-600 cursor-pointer"
           >
             Профиль

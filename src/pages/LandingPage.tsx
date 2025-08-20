@@ -78,7 +78,7 @@ export default function LandingPage() {
           </Link>
           <span className="text-gray-400 select-none text-[18px]">///</span>
           <Link
-            to="/profile"
+            to="/user/profile"
             className="relative text-black cursor-pointer after:content-[''] after:absolute after:bottom-0 after:left-1/2 after:w-0 after:h-[2px] after:bg-[#1daff7] after:transition-all after:duration-300 hover:after:w-full hover:after:left-0 hover:text-[#1daff7]"
           >
             Профиль
