@@ -1,9 +1,16 @@
 import { useLocation, Link, useNavigate } from "react-router-dom";
+import { userStorage } from "@/services/storageUser";
+import { ROLES } from "@/types";
 
 export default function InternalHeader() {
   const loc = useLocation();
   const navigate = useNavigate();
   const canGoBack = loc.pathname !== "/setup";
+
+  const isAdmin =
+    userStorage.getUser()?.role === ROLES.ADMIN ||
+    userStorage.getUser()?.role === ROLES.PROJECT_ADMIN ||
+    userStorage.getUser()?.role === ROLES.WORKSPACE_ADMIN;
 
   const handleGoBack = () => {
     if (loc.key !== "default") {
@@ -25,12 +32,11 @@ export default function InternalHeader() {
               ← Назад
             </button>
           )}
-
           <Link
             to="/"
             className="text-[25px] font-medium text-black hover:text-[#1daff7] transition-colors duration-300"
           >
-            Office Space
+            OFFICE SPACE
           </Link>
         </div>
 
@@ -43,14 +49,25 @@ export default function InternalHeader() {
           </Link>
           <span className="text-gray-300 select-none">///</span>
           <Link
-            to="/setup"
+            to="/search/employees"
             className="text-[16px] underline-hover text-gray-600 cursor-pointer"
           >
-            Управление
+            Поиск
           </Link>
           <span className="text-gray-300 select-none">///</span>
+          {isAdmin && (
+            <>
+              <Link
+                to="/setap"
+                className="text-[16px] underline-hover text-gray-600 cursor-pointer"
+              >
+                Управление
+              </Link>
+              <span className="text-gray-300 select-none">///</span>
+            </>
+          )}
           <Link
-            to="/profile"
+            to="/user/profile"
             className="text-[16px] underline-hover text-gray-600 cursor-pointer"
           >
             Профиль

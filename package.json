@@ -16,6 +16,7 @@
 		"@react-three/fiber": "^9.3.0",
 		"@reduxjs/toolkit": "^2.8.2",
 		"@smplrspace/smplr-loader": "^2.7.0",
+		"@tabler/icons-react": "^3.34.1",
 		"@tailwindcss/vite": "^4.1.11",
 		"@tanstack/react-query": "^5.84.1",
 		"@types/ramda": "0.28",
