@@ -17,7 +17,6 @@ export const BookingForm: React.FC<BookingFormProps> = ({
 	userId,
 	placeBookingId,
 }) => {
-	console.log(userId)
 	const [selectedDay, setSelectedDay] = useState<
 		'today' | 'tomorrow' | 'dayAfter' | ''
 	>('')

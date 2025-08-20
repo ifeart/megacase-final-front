@@ -77,21 +77,28 @@ export function UserProfile() {
 				<h3 className="font-['PPRader'] text-[18px] sm:text-[20px] text-black">
 					Текущие бронирования
 				</h3>
-				<div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4'>
-					{currentBookings.map(item => (
-						<div className='border border-gray-200 rounded-xl p-4 space-y-1'>
-							<p className="font-['PPRader'] text-[15px] sm:text-[16px] text-black">
-								{item.place}
-							</p>
-							<p className="font-['PPRader'] text-[13px] sm:text-[14px] text-gray-600">
-								{item.town}, Офис {item.office}, Этаж {item.floor}, Комната {item.room}, {item.desk ? `Стол ${item.desk}` : null}
-							</p>
-							<p className="font-['PPRader'] text-[13px] sm:text-[14px] text-gray-500">
-								{item.date} • {item.time}
-							</p>
-						</div>
-					))}
-				</div>
+				{!currentBookings.length ? (
+					<p className="font-['PPRader'] text-[15px] sm:text-[16px] text-black">
+						Нет текущих бронирований
+					</p>
+				) : (
+					<div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4'>
+						{currentBookings.map(item => (
+							<div className='border border-gray-200 rounded-xl p-4 space-y-1'>
+								<p className="font-['PPRader'] text-[15px] sm:text-[16px] text-black">
+									{item.place}
+								</p>
+								<p className="font-['PPRader'] text-[13px] sm:text-[14px] text-gray-600">
+									{item.town}, Офис {item.office}, Этаж {item.floor}, Комната{' '}
+									{item.room}, {item.desk ? `Стол ${item.desk}` : null}
+								</p>
+								<p className="font-['PPRader'] text-[13px] sm:text-[14px] text-gray-500">
+									{item.date} • {item.time}
+								</p>
+							</div>
+						))}
+					</div>
+				)}
 			</section>
 
 			<section className='space-y-6'>
