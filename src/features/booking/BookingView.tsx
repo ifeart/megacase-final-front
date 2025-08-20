@@ -60,22 +60,27 @@ export const BookingView: React.FC<Props> = ({ officeNameId }) => {
 
   // Устанавливаем текущий офис при прямом переходе по URL
   useEffect(() => {
-    if (officeNameId) {
-      const officeMeta = getOfficeMeta(officeNameId);
-      if (officeMeta) {
-        setCurrentOfficeId(officeNameId);
-      } else {
-        // Если офис не найден, перенаправляем на общую карту
-        navigate("/booking");
-      }
-    }
-  }, [officeNameId, navigate]);
+    setViewMode(officeNameId ? "space" : "map");
+  }, [officeNameId]);
+  //   if (officeNameId) {
+  //     const officeMeta = getOfficeMeta(officeNameId);
+  //     if (officeMeta) {
+  //       setCurrentOfficeId(officeNameId);
+  //     } else {
+  //       // Если офис не найден, перенаправляем на общую карту
+  //       navigate("/booking");
+  //     }
+  //   }
+  // }, [officeNameId, navigate]);
+  // console.log("viewMode", viewMode);
+
   const [selectedCity, setSelectedCity] = useState<string | null>(null);
   const [cityOffices, setCityOffices] = useState<OfficeOnMap[] | null>(null);
 
   const officesOnMap = getOfficesForMap();
-  console.log("officesOnMap", officesOnMap);
-  console.log("getOfficeMeta()", getOfficeMeta("moskow"));
+
+  // console.log("officesOnMap", officesOnMap);
+  // console.log("getOfficeMeta()", getOfficeMeta("moskow"));
 
   const pointsLayerData = useMemo(
     () =>
