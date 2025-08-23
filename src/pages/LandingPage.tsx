@@ -3,12 +3,19 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import Auth from "../components/Auth";
 import Silk from "../components/Silk";
 import { useAuth } from "@/context/AuthContext";
+import { userStorage } from "@/services/storageUser";
+import { ROLES } from "@/types";
 
 export default function LandingPage() {
   const [isOverlayVisible, setIsOverlayVisible] = useState(false);
   const navigate = useNavigate();
   const { user, logout } = useAuth();
   const location = useLocation();
+
+  const isAdmin =
+    userStorage.getUser()?.role === ROLES.ADMIN ||
+    userStorage.getUser()?.role === ROLES.PROJECT_ADMIN ||
+    userStorage.getUser()?.role === ROLES.WORKSPACE_ADMIN;
 
   useEffect(() => {
     if (location.state?.from && !user) {
@@ -36,7 +43,7 @@ export default function LandingPage() {
   return (
     <div className="fixed inset-0 bg-white overflow-hidden">
       <div className="fixed top-8 left-13 right-13 z-10 flex items-center justify-between">
-        <Link to="/">
+        <Link to="/" className="flex items-center gap-4">
           <svg
             width="82"
             height="32"
@@ -60,6 +67,10 @@ export default function LandingPage() {
               className="transition-fill duration-300 hover:fill-[#0f8cd4]"
             />
           </svg>
+          <span className="text-gray-300 select-none">|</span>
+          <span className="text-[25px] font-medium text-black hover:text-[#1daff7] transition-colors duration-300">
+            OFFICE SPACE
+          </span>
         </Link>
 
         <nav className="flex items-center gap-12 font-['PPRader'] text-[25px]">
@@ -71,11 +82,22 @@ export default function LandingPage() {
           </Link>
           <span className="text-gray-400 select-none text-[18px]">///</span>
           <Link
-            to="/setup"
+            to="/search/employees"
             className="relative text-black cursor-pointer after:content-[''] after:absolute after:bottom-0 after:left-1/2 after:w-0 after:h-[2px] after:bg-[#1daff7] after:transition-all after:duration-300 hover:after:w-full hover:after:left-0 hover:text-[#1daff7]"
           >
-            Управление
+            Поиск
           </Link>
+          {isAdmin && (
+            <>
+              <span className="text-gray-400 select-none text-[18px]">///</span>
+              <Link
+                to="/setup"
+                className="relative text-black cursor-pointer after:content-[''] after:absolute after:bottom-0 after:left-1/2 after:w-0 after:h-[2px] after:bg-[#1daff7] after:transition-all after:duration-300 hover:after:w-full hover:after:left-0 hover:text-[#1daff7]"
+              >
+                Управление
+              </Link>
+            </>
+          )}
           <span className="text-gray-400 select-none text-[18px]">///</span>
           <Link
             to="/user/profile"
