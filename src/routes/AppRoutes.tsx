@@ -7,6 +7,7 @@ import {
   SearchEmployeesRoute,
   SetupRoute,
   UserProfileRoute,
+  ManagementRoute,
 } from "@/routes";
 import { ROLES } from "@/types";
 import { Navigate, Route, Routes, useParams } from "react-router-dom";
@@ -70,6 +71,16 @@ export function AppRoutes() {
             resourceId={useParams().spaceId}
           >
             <MapPlacementRoute />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Management Routes */}
+      <Route
+        path="/management"
+        element={
+          <ProtectedRoute requiredRole={ROLES.PROJECT_ADMIN}>
+            <ManagementRoute />
           </ProtectedRoute>
         }
       />

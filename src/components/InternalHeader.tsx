@@ -83,7 +83,7 @@ export default function InternalHeader() {
           {isAdmin && (
             <>
               <Link
-                to="/setap"
+                to="/management"
                 className="text-[16px] underline-hover text-gray-600 cursor-pointer"
               >
                 Управление

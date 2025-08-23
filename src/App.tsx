@@ -5,7 +5,8 @@ import { AuthProvider } from "./context/AuthContext";
 
 export default function App() {
   return (
-    <div className="h-screen w-full overflow-hidden bg-white">
+    <div className="h-screen w-full bg-white">
+      {/* <div className="h-screen w-full overflow-hidden bg-white"> */}
       <AuthProvider>
         <Routes>
           <Route path="/" element={<LandingPage />} />

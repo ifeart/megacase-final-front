@@ -17,8 +17,8 @@ interface OfficeFormData {
 }
 
 export const SpaceSetup: React.FC<Props> = ({ onDone }) => {
-  const currentOfficeId = getCurrentOfficeId();
-  const [spaceId, setSpaceId] = useState(currentOfficeId);
+  // const currentOfficeId = getCurrentOfficeId();
+  const [spaceId, setSpaceId] = useState("");
   const [formData, setFormData] = useState<OfficeFormData>({
     nameId: "",
     displayName: "",
@@ -63,7 +63,7 @@ export const SpaceSetup: React.FC<Props> = ({ onDone }) => {
     setCurrentOfficeId(nameId);
     const officeMeta = getOfficeData(nameId)?.meta;
     if (officeMeta) {
-      console.log('spaceId: ',  officeMeta.spaceId)
+      console.log("spaceId: ", officeMeta.spaceId);
       onDone(officeMeta.spaceId);
     }
   };
@@ -73,7 +73,7 @@ export const SpaceSetup: React.FC<Props> = ({ onDone }) => {
       <div className="w-full max-w-2xl p-12 glass-panel rounded-[30px]">
         <div className="text-center mb-12">
           <h2 className="text-[48px] text-black tracking-tight mb-4">
-            Настройка пространства
+            Создание офиса
           </h2>
           <p className="text-[18px] text-gray-500">
             Выберите существующий офис или создайте новый

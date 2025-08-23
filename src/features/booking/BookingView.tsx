@@ -337,7 +337,7 @@ export const BookingView: React.FC<Props> = ({ officeNameId }) => {
 
             setTimeout(() => {
               map.setCameraPlacement({
-                center: { lng: 55, lat: 61 },
+                center: { lng: 50, lat: 61 },
                 zoom: 3.7,
                 pitch: 0,
                 bearing: 0,
