@@ -7,7 +7,7 @@ export const STORAGE_KEYS = {
   OFFICES_ON_MAP: "offices_on_map", // Список офисов, отображаемых на карте
   CURRENT_OFFICE: "current_office", // Текущий выбранный офис
 
-  // Данные всех офисов
+  // Данные всех офисов∏
   ALL_MARKERS: "all_markers", // { [officeId]: Marker[] }
   ALL_ROOMS: "all_rooms", // { [officeId]: Room[] }
   ALL_DESKS: "all_desks", // { [officeId]: Desk[] }
