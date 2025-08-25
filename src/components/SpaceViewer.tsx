@@ -52,7 +52,7 @@ export const SpaceViewer: React.FC<Props> = ({
 
   return (
     <div className="relative h-full w-full bg-slate-100 overflow-hidden">
-      <div id={containerId} className="absolute inset-0 h-[105%] w-full" />
+      <div id={containerId} className="absolute inset-0 h-[105%] w-full"/>
     </div>
   );
 };
