@@ -412,7 +412,7 @@ export function SearchEmployees() {
         <header className="flex items-center justify-between">
           <Link
             to="/"
-            className="flex items-center gap-1 px-3 py-2 rounded-full hover:bg-[#e6f7ff] transition"
+            className="flex items-center gap-1 px-3 py-2 rounded-full hover:bg-[#e6f7ff] transition sm:hidden"
           >
             <IconArrowLeft
               size={24}

@@ -33,7 +33,7 @@ export default function InternalHeader() {
 						{canGoBack && (
 							<button
 								onClick={handleGoBack}
-								className='text-[16px] cursor-pointer text-gray-700 hover:text-[#1daff7] transition-colors duration-300'
+								className='hidden sm:block text-[16px] cursor-pointer text-gray-700 hover:text-[#1daff7] transition-colors duration-300'
 							>
 								← Назад
 							</button>
