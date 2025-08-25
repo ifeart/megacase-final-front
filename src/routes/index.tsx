@@ -7,3 +7,4 @@ export { default as SetupRoute } from "./SetupRoute";
 export { default as SearchEmployeesRoute } from "./SearchEmployeesRoute";
 export { default as UserProfileRoute } from "./UserProfileRoute";
 export { default as ManagementRoute } from "./ManagementRoute";
+export {default as AdminDashboardRoute} from "./AdminDashboardRoute";
