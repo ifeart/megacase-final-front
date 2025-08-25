@@ -127,7 +127,7 @@ export default function LandingPage() {
       <div className="min-h-screen pt-33 bg-white overflow-hidden">
         <div className="max-w-[1920px] h-full mx-auto px-13">
           <div className="flex justify-center">
-            <div className="relative w-full max-w-[100%] h-[1100px] rounded-[30px] overflow-hidden z-[5]">
+            <div className="relative w-full max-w-[100%] h-[100vh] rounded-[30px] overflow-hidden z-[5]">
               <Silk
                 speed={5}
                 scale={1}

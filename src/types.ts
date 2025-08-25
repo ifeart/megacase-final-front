@@ -19,6 +19,7 @@ export type User = {
 		projectIds: string[];
 		workspaceIds: string[];
 	};
+	phone?: string;
 	avatar?: string;
 };
 
@@ -64,6 +65,32 @@ export type OfficeMeta = {
   isPublished: boolean; // Опубликован ли офис (виден ли на карте)
 };
 
+export type TimeSlot = {
+  date: string; // ISO date string format YYYY-MM-DD
+  time: string; // Format HH:MM
+  duration: '30min' | '1hour' | '1.5hour' | '2hour' | 'toTheEndWorkDay';
+  // Keep the original day value for backward compatibility
+  day?: 'today' | 'tomorrow' | 'dayAfter';
+};
+
+export type BookingData = {
+  id: string;
+  userId: string;
+  userName: string;
+  placeType: 'room' | 'desk';
+  placeId: string;
+  placeName?: string;
+  placeLevel?: number;
+  officeId?: string;
+  officeName?: string;
+  city?: string;
+  timeSlot: TimeSlot;
+  createdAt: number;
+  status?: 'active' | 'completed' | 'cancelled';
+};
+
+export type BookingsMap = Record<string, BookingData[]>;
+
 export type OfficeData = {
   meta: OfficeMeta;
   markers: Marker[];
@@ -74,4 +101,6 @@ export type OfficeData = {
   inclusionRooms: Record<string, boolean>;
   inclusionDesks: Record<string, boolean>;
   inclusionMarkers: Record<string, boolean>;
+  bookingsRooms: BookingsMap;
+  bookingsDesks: BookingsMap;
 };

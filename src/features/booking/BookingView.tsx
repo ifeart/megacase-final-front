@@ -24,7 +24,6 @@ import {
   getRoomsAvailability,
   getRoomsInclusion,
   setCurrentOfficeId,
-  toggleAvailability,
   verifyAndRepairOfficeData,
 } from "../../services/storage";
 import { BookingForm } from "../bookingForm/BookingForm";
@@ -45,6 +44,8 @@ interface IBookingModalData {
   isOpen: boolean;
   userId?: string;
   placeBookingId: string | null;
+  placeName?: string;
+  placeLevel?: number;
 }
 
 export const BookingView: React.FC<Props> = ({ officeNameId }) => {
@@ -62,6 +63,8 @@ export const BookingView: React.FC<Props> = ({ officeNameId }) => {
     placeBooking: null,
     isOpen: false,
     placeBookingId: null,
+    placeName: "",
+    placeLevel: 1,
   });
 
   const [viewMode, setViewMode] = useState<"map" | "space">(
@@ -73,7 +76,22 @@ export const BookingView: React.FC<Props> = ({ officeNameId }) => {
       placeBooking: null,
       isOpen: false,
       placeBookingId: null,
+      placeName: "",
+      placeLevel: 1,
     });
+
+    // Refresh the room and desk data
+    if (roomsCtrlRef.current) {
+      roomsCtrlRef.current.update({ data: roomsData() });
+    }
+    if (desksCtrlRef.current) {
+      desksCtrlRef.current.update({
+        data: desksData().map((x) => ({
+          ...x,
+          furnitureId: x.furnitureId,
+        })),
+      });
+    }
   }
 
   // Проверяем и восстанавливаем данные при загрузке
@@ -192,19 +210,16 @@ export const BookingView: React.FC<Props> = ({ officeNameId }) => {
       },
       onHoverOut: () => setHover(null),
       onClick: (d: any) => {
-        if (!d.available) {
-          toggleAvailability("room", d.id);
-          roomsCtrlRef.current?.update({ data: roomsData() });
-          return;
-        }
-
+        // Открываем форму бронирования
         setBookingModalData({
           placeBooking: "room",
           isOpen: true,
           placeBookingId: d.id,
           userId: userStorage.getUser()?.id,
+          placeName: d.name,
+          placeLevel: d.levelIndex,
         });
-        // toggleAvailability('room', d.id)
+
         roomsCtrlRef.current?.update({ data: roomsData() });
       },
     });
@@ -229,23 +244,16 @@ export const BookingView: React.FC<Props> = ({ officeNameId }) => {
       },
       onHoverOut: () => setHover(null),
       onClick: (d: any) => {
-        if (!d.available) {
-          toggleAvailability("desk", d.id);
-          desksCtrlRef.current?.update({
-            data: desksData().map((x) => ({
-              ...x,
-              furnitureId: x.furnitureId,
-            })),
-          });
-          return;
-        }
-
+        // Открываем форму бронирования
         setBookingModalData({
           placeBooking: "table",
           isOpen: true,
           placeBookingId: d.id,
           userId: userStorage.getUser()?.id,
+          placeName: d.name,
+          placeLevel: d.levelIndex,
         });
+
         desksCtrlRef.current?.update({
           data: desksData().map((x) => ({
             ...x,
@@ -275,18 +283,21 @@ export const BookingView: React.FC<Props> = ({ officeNameId }) => {
 
   const onBookToggle = useCallback(() => {
     if (!hover) return;
-    if (hover.kind === "room") {
-      toggleAvailability("room", hover.id);
-      roomsCtrlRef.current?.update({ data: roomsData() });
-    } else {
-      toggleAvailability("desk", hover.id);
-      desksCtrlRef.current?.update({
-        data: desksData().map((x) => ({
-          ...x,
-          furnitureId: x.furnitureId,
-        })),
-      });
-    }
+
+    // Открываем форму бронирования при клике на "Забронировать"
+    const data = hover.kind === "room" ? roomsData() : desksData();
+    const item = data.find((x) => x.id === hover.id);
+
+    if (!item) return;
+
+    setBookingModalData({
+      placeBooking: hover.kind === "room" ? "room" : "table",
+      isOpen: true,
+      placeBookingId: hover.id,
+      userId: userStorage.getUser()?.id,
+      placeName: hover.name,
+      placeLevel: item.levelIndex,
+    });
   }, [hover, roomsData, desksData]);
 
   // Инициализация слоев для пространства
@@ -474,6 +485,8 @@ export const BookingView: React.FC<Props> = ({ officeNameId }) => {
           }
           placeBookingId={bookingModalData.placeBookingId}
           userId={bookingModalData.userId ? bookingModalData.userId : null}
+          placeName={bookingModalData.placeName}
+          placeLevel={bookingModalData.placeLevel}
           onClose={handleCloseModal}
         />
       ) : null}
@@ -495,7 +508,7 @@ export const BookingView: React.FC<Props> = ({ officeNameId }) => {
               className="px-4 py-2 text-[14px] primary-button"
               onClick={onBookToggle}
             >
-              {hover.available ? "Забронировать" : "Освободить"}
+              Бронирование
             </button>
           </div>
         </div>

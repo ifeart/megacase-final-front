@@ -16,5 +16,9 @@ export const STORAGE_KEYS = {
   ALL_INCLUSION_ROOMS: "all_inclusion_rooms", // { [officeId]: { [roomId]: boolean } }
   ALL_INCLUSION_DESKS: "all_inclusion_desks", // { [officeId]: { [deskId]: boolean } }
   ALL_INCLUSION_MARKERS: "all_inclusion_markers", // { [officeId]: { [markerId]: boolean } }
+  
+  // Данные бронирований
+  ALL_BOOKINGS_ROOMS: "all_bookings_rooms", // { [officeId]: { [roomId]: BookingData[] } }
+  ALL_BOOKINGS_DESKS: "all_bookings_desks", // { [officeId]: { [deskId]: BookingData[] } }
 };
 

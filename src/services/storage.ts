@@ -1,13 +1,18 @@
 import { STORAGE_KEYS } from '../constants'
 import type {
 	AvailabilityMap,
+	BookingData,
+	BookingsMap,
 	DeskEntity,
 	Marker,
 	OfficeData,
 	OfficeMeta,
 	OfficeOnMap,
+	ROLE,
 	RoomEntity,
+	TimeSlot,
 } from '../types'
+import { ROLES } from '../types'
 
 const readJson = <T>(key: string, fallback: T): T => {
 	try {
@@ -94,6 +99,14 @@ export const getOfficeData = (nameId: string): Partial<OfficeData> => {
 		STORAGE_KEYS.ALL_INCLUSION_MARKERS,
 		{}
 	)
+	const allBookingsRooms = readJson<Record<string, BookingsMap>>(
+		STORAGE_KEYS.ALL_BOOKINGS_ROOMS,
+		{}
+	)
+	const allBookingsDesks = readJson<Record<string, BookingsMap>>(
+		STORAGE_KEYS.ALL_BOOKINGS_DESKS,
+		{}
+	)
 
 	return {
 		meta,
@@ -105,6 +118,8 @@ export const getOfficeData = (nameId: string): Partial<OfficeData> => {
 		inclusionRooms: allInclusionRooms[nameId] || {},
 		inclusionDesks: allInclusionDesks[nameId] || {},
 		inclusionMarkers: allInclusionMarkers[nameId] || {},
+		bookingsRooms: allBookingsRooms[nameId] || {},
+		bookingsDesks: allBookingsDesks[nameId] || {},
 	}
 }
 
@@ -174,6 +189,22 @@ const saveOfficeData = (nameId: string, data: Partial<OfficeData>) => {
 		>(STORAGE_KEYS.ALL_INCLUSION_MARKERS, {})
 		allInclusionMarkers[nameId] = data.inclusionMarkers
 		writeJson(STORAGE_KEYS.ALL_INCLUSION_MARKERS, allInclusionMarkers)
+	}
+	if (data.bookingsRooms) {
+		const allBookingsRooms = readJson<Record<string, BookingsMap>>(
+			STORAGE_KEYS.ALL_BOOKINGS_ROOMS,
+			{}
+		)
+		allBookingsRooms[nameId] = data.bookingsRooms
+		writeJson(STORAGE_KEYS.ALL_BOOKINGS_ROOMS, allBookingsRooms)
+	}
+	if (data.bookingsDesks) {
+		const allBookingsDesks = readJson<Record<string, BookingsMap>>(
+			STORAGE_KEYS.ALL_BOOKINGS_DESKS,
+			{}
+		)
+		allBookingsDesks[nameId] = data.bookingsDesks
+		writeJson(STORAGE_KEYS.ALL_BOOKINGS_DESKS, allBookingsDesks)
 	}
 }
 
@@ -307,6 +338,8 @@ export const initializeNewOffice = (
 		inclusionRooms: {},
 		inclusionDesks: {},
 		inclusionMarkers: {},
+		bookingsRooms: {},
+		bookingsDesks: {},
 	}
 
 	saveOfficeData(nameId, officeData)
@@ -396,9 +429,242 @@ export const publishOffice = (
 	}
 }
 
+// === УПРАВЛЕНИЕ БРОНИРОВАНИЯМИ ===
+export const getRoomsBookings = (): BookingsMap => {
+	const office = getCurrentOfficeData()
+	return office.bookingsRooms || {}
+}
+
+export const setRoomsBookings = (bookingsRooms: BookingsMap) => {
+	updateCurrentOffice({ bookingsRooms })
+}
+
+export const getDesksBookings = (): BookingsMap => {
+	const office = getCurrentOfficeData()
+	return office.bookingsDesks || {}
+}
+
+export const setDesksBookings = (bookingsDesks: BookingsMap) => {
+	updateCurrentOffice({ bookingsDesks })
+}
+
+// Функция для преобразования относительной даты в абсолютную
+export const convertRelativeDateToISO = (day: 'today' | 'tomorrow' | 'dayAfter'): string => {
+	const date = new Date()
+	
+	switch (day) {
+		case 'tomorrow':
+			date.setDate(date.getDate() + 1)
+			break
+		case 'dayAfter':
+			date.setDate(date.getDate() + 2)
+			break
+		// для 'today' ничего делать не нужно
+	}
+	
+	// Форматируем дату в ISO формат YYYY-MM-DD
+	return date.toISOString().split('T')[0]
+}
+
+// Функция для определения относительного дня из даты
+export const getRelativeDayFromDate = (dateStr: string): 'today' | 'tomorrow' | 'dayAfter' | null => {
+	const today = new Date()
+	today.setHours(0, 0, 0, 0)
+	
+	const tomorrow = new Date(today)
+	tomorrow.setDate(tomorrow.getDate() + 1)
+	
+	const dayAfter = new Date(today)
+	dayAfter.setDate(dayAfter.getDate() + 2)
+	
+	const date = new Date(dateStr)
+	date.setHours(0, 0, 0, 0)
+	
+	if (date.getTime() === today.getTime()) return 'today'
+	if (date.getTime() === tomorrow.getTime()) return 'tomorrow'
+	if (date.getTime() === dayAfter.getTime()) return 'dayAfter'
+	
+	return null
+}
+
+// Функция для форматирования даты в удобочитаемый вид
+export const formatBookingDate = (dateStr: string): string => {
+	const relativeDay = getRelativeDayFromDate(dateStr)
+	
+	if (relativeDay) {
+		switch (relativeDay) {
+			case 'today': return 'Сегодня'
+			case 'tomorrow': return 'Завтра'
+			case 'dayAfter': return 'Послезавтра'
+		}
+	}
+	
+	// Если не относительная дата, форматируем как обычную дату
+	const date = new Date(dateStr)
+	return date.toLocaleDateString('ru-RU', { 
+		day: 'numeric', 
+		month: 'long', 
+		year: 'numeric' 
+	})
+}
+
+// Функция для создания нового бронирования
+export const createBooking = (
+	type: 'room' | 'desk', 
+	placeId: string, 
+	userId: string,
+	userName: string,
+	timeSlot: TimeSlot,
+	placeName?: string,
+	placeLevel?: number,
+	officeId?: string
+): BookingData => {
+	// Если есть day, но нет date, преобразуем day в date
+	let updatedTimeSlot = { ...timeSlot };
+	if (timeSlot.day && !timeSlot.date) {
+		updatedTimeSlot.date = convertRelativeDateToISO(timeSlot.day);
+	}
+	
+	// Получаем информацию об офисе
+	const currentOfficeId = getCurrentOfficeId();
+	const officeMeta = getOfficeMeta(officeId || currentOfficeId);
+	
+	const bookingData: BookingData = {
+		id: Date.now().toString(),
+		userId,
+		userName,
+		placeType: type,
+		placeId,
+		placeName,
+		placeLevel,
+		officeId: officeId || currentOfficeId,
+		officeName: officeMeta?.displayName,
+		city: officeMeta?.city,
+		timeSlot: updatedTimeSlot,
+		createdAt: Date.now(),
+		status: 'active',
+	}
+
+	if (type === 'room') {
+		const bookings = getRoomsBookings()
+		if (!bookings[placeId]) {
+			bookings[placeId] = []
+		}
+		bookings[placeId].push(bookingData)
+		setRoomsBookings(bookings)
+
+		// Устанавливаем статус занятости
+		const availability = getRoomsAvailability()
+		availability[placeId] = false
+		setRoomsAvailability(availability)
+	} else {
+		const bookings = getDesksBookings()
+		if (!bookings[placeId]) {
+			bookings[placeId] = []
+		}
+		bookings[placeId].push(bookingData)
+		setDesksBookings(bookings)
+
+		// Устанавливаем статус занятости
+		const availability = getDesksAvailability()
+		availability[placeId] = false
+		setDesksAvailability(availability)
+	}
+
+	return bookingData
+}
+
+// Функция для отмены бронирования
+export const cancelBooking = (
+	type: 'room' | 'desk', 
+	placeId: string, 
+	bookingId: string
+): boolean => {
+	if (type === 'room') {
+		const bookings = getRoomsBookings()
+		if (!bookings[placeId]) return false
+
+		const index = bookings[placeId].findIndex(b => b.id === bookingId)
+		if (index === -1) return false
+
+		bookings[placeId].splice(index, 1)
+		
+		// Если больше нет бронирований, устанавливаем статус доступности
+		if (bookings[placeId].length === 0) {
+			const availability = getRoomsAvailability()
+			availability[placeId] = true
+			setRoomsAvailability(availability)
+		}
+		
+		setRoomsBookings(bookings)
+	} else {
+		const bookings = getDesksBookings()
+		if (!bookings[placeId]) return false
+
+		const index = bookings[placeId].findIndex(b => b.id === bookingId)
+		if (index === -1) return false
+
+		bookings[placeId].splice(index, 1)
+		
+		// Если больше нет бронирований, устанавливаем статус доступности
+		if (bookings[placeId].length === 0) {
+			const availability = getDesksAvailability()
+			availability[placeId] = true
+			setDesksAvailability(availability)
+		}
+		
+		setDesksBookings(bookings)
+	}
+
+	return true
+}
+
+// Функция для проверки, может ли пользователь отменить бронирование
+export const canCancelBooking = (
+	userId: string,
+	userRole: ROLE,
+	bookingUserId: string
+): boolean => {
+	// Админ или владелец бронирования может отменить
+	return userId === bookingUserId || 
+		userRole === ROLES.ADMIN || 
+		userRole === ROLES.PROJECT_ADMIN || 
+		userRole === ROLES.WORKSPACE_ADMIN
+}
+
+// Функция для получения всех бронирований пользователя
+export const getUserBookings = (userId: string): BookingData[] => {
+	const roomsBookings = getRoomsBookings()
+	const desksBookings = getDesksBookings()
+	
+	const userRoomBookings = Object.values(roomsBookings)
+		.flat()
+		.filter(booking => booking.userId === userId)
+	
+	const userDeskBookings = Object.values(desksBookings)
+		.flat()
+		.filter(booking => booking.userId === userId)
+	
+	return [...userRoomBookings, ...userDeskBookings]
+		.sort((a, b) => b.createdAt - a.createdAt)
+}
+
+// Добавим в storage.ts
+export const getBookingById = (bookingId: string): BookingData | null => {
+	const roomsBookings = getRoomsBookings();
+	const desksBookings = getDesksBookings();
+	
+	const roomBooking = roomsBookings[bookingId];
+	const deskBooking = desksBookings[bookingId];
+
+	if (roomBooking) return roomBooking[0];
+	if (deskBooking) return deskBooking[0];
+
+	return null;
+};
+
 // === ПРОВЕРКА И ВОССТАНОВЛЕНИЕ ДАННЫХ ===
 export const verifyAndRepairOfficeData = () => {
-	// Получаем все офисы
 	const allOffices = getAllOfficesMeta()
 
 	// Проверяем и обновляем данные на карте

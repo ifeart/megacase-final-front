@@ -157,7 +157,7 @@ const Silk: React.FC<SilkProps> = ({
   return (
     <Canvas
       className="block"
-      style={{ width: "100%", height: "1100px" }}
+      style={{ width: "100%", height: "100%" }}
       dpr={[1, 2]}
       frameloop="always"
     >

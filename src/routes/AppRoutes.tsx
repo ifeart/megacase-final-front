@@ -8,6 +8,7 @@ import {
   SetupRoute,
   UserProfileRoute,
   ManagementRoute,
+  BookingConfirmRoute,
 } from "@/routes";
 import { ROLES } from "@/types";
 import { Navigate, Route, Routes, useParams } from "react-router-dom";
@@ -111,6 +112,11 @@ export function AppRoutes() {
             <SearchEmployeesRoute />
           </ProtectedRoute>
         }
+      />
+
+      <Route
+        path="/booking/confirm/:bookingId"
+        element={<BookingConfirmRoute />}
       />
 
       {/* Default redirect */}
