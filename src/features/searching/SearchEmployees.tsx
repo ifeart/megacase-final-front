@@ -418,9 +418,6 @@ export function SearchEmployees() {
               size={24}
               className="text-black group-hover:text-[#1daff7]"
             />
-            <span className="font-['PPRader'] text-[16px] text-black group-hover:text-[#1daff7] hidden sm:inline">
-              Назад
-            </span>
           </Link>
 
           <h1 className="font-['PPRader'] text-[28px] md:text-[36px] text-black tracking-tight text-center flex-1">
